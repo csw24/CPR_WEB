@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CPR Training Analytics | XI:ON</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main>
+    <header class="hero">
+      <div class="hero-copy">
+        <div class="brand-icon" aria-hidden="true">♥<span>⌁</span></div>
+        <div>
+          <small>XI:ON · CPR TRAINING</small>
+          <h1>CPR Training Analytics</h1>
+          <p>스마트 CPR 교육 결과 분석 시스템</p>
+        </div>
+      </div>
+      <div class="trainee-box">
+        <label for="student">◉ &nbsp; Trainee</label>
+        <select id="student"><option value="A">Trainee A</option><option value="B">Trainee B</option></select>
+      </div>
+      <div class="hero-wave" aria-hidden="true">♡ &nbsp;⌁ &nbsp; ♡</div>
+    </header>
+
+    <section class="cards" id="metrics" aria-label="CPR 수행 지표"></section>
+
+    <div class="details-grid">
+      <section class="panel chart-panel">
+        <div class="panel-heading">
+          <h2><span class="heading-icon">⌁</span> 압박 깊이 변화 그래프</h2>
+          <span class="legend"><i></i> 권장 범위 (5~6 cm) <b>●</b> 측정값</span>
+        </div>
+        <canvas id="chart" width="850" height="330" role="img" aria-label="압박 깊이 그래프"></canvas>
+        <div class="axis-label">압박 순서</div>
+      </section>
+      <section class="panel feedback-panel">
+        <h2><span class="heading-icon">◉</span> 맞춤형 피드백</h2>
+        <div id="feedback"></div>
+      </section>
+    </div>
+    <footer><span>💗 &nbsp; CPR Training Analytics &nbsp; | &nbsp; 스마트 CPR 교육을 통해 소중한 생명을 지킵니다.</span><span>EVERY COMPRESSION COUNTS</span></footer>
+    <p class="disclaimer">※ 모든 수치는 시연용 테스트 데이터입니다. 실제 센서 측정, BLE 연결 및 기록 저장 기능은 아직 구현되지 않았습니다.</p>
+  </main>
+  <script src="script.js"></script>
+</body>
+</html>
