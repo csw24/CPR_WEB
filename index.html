@@ -27,6 +27,25 @@
       <div class="hero-wave" aria-hidden="true">♡ &nbsp;⌁ &nbsp; ♡</div>
     </header>
 
+    <section class="data-actions" aria-label="교육 결과 관리">
+      <div class="action-buttons">
+        <button id="connectBle" class="action-btn secondary" type="button">ESP32 연결</button>
+        <button id="loadBle" class="action-btn primary" type="button">교육 결과 불러오기</button>
+        <button id="uploadDemo" class="action-btn demo" type="button">시연 데이터 업로드</button>
+        <button id="loadCloud" class="action-btn secondary" type="button">저장된 결과 조회</button>
+      </div>
+      <p id="actionMessage" class="action-message" role="status" aria-live="polite">현재 화면은 시연용 데이터입니다.</p>
+    </section>
+
+    <dialog id="noticeDialog" class="notice-dialog" aria-labelledby="noticeTitle">
+      <h2 id="noticeTitle">ESP32 연결 필요</h2>
+      <p id="noticeText">교육 결과를 불러오려면 ESP32를 먼저 연결해 주세요.</p>
+      <div class="dialog-actions">
+        <button id="noticeCancel" type="button" class="action-btn secondary">닫기</button>
+        <button id="noticeConnect" type="button" class="action-btn primary">ESP32 연결하기</button>
+      </div>
+    </dialog>
+
     <section class="cards" id="metrics" aria-label="CPR 수행 지표"></section>
 
     <div class="details-grid">
@@ -44,8 +63,9 @@
       </section>
     </div>
     <footer><span>💗 &nbsp; CPR Training Analytics &nbsp; | &nbsp; 스마트 CPR 교육을 통해 소중한 생명을 지킵니다.</span><span>EVERY COMPRESSION COUNTS</span></footer>
-    <p class="disclaimer">※ 모든 수치는 시연용 테스트 데이터입니다. 실제 센서 측정, BLE 연결 및 기록 저장 기능은 아직 구현되지 않았습니다.</p>
+    <p class="disclaimer">※ 기본 화면은 시연용 데이터입니다. 실제 BLE 통신은 ESP32 펌웨어 및 서비스 UUID 설정 후 검증이 필요합니다. 시연 데이터는 실제 측정값과 구분하여 저장됩니다.</p>
   </main>
   <script src="script.js"></script>
+  <script type="module" src="integration.js"></script>
 </body>
 </html>

@@ -1,5 +1,5 @@
 // 시연용 데이터입니다. 실제 센서값이 아닙니다.
-const students = {
+let students = {
   A: { depth: [5.1,5.4,5.2,5.6,5.5,5.3,5.7,5.4,5.2,5.5], rate: 110, position: 92, recoil: 90, breaths: 2, cycles: 1 },
   B: { depth: [4.4,4.8,5.0,4.7,5.1,4.9,4.6,5.2,4.8,5.0], rate: 128, position: 76, recoil: 70, breaths: 1, cycles: 1 }
 };
@@ -78,3 +78,24 @@ function render() {
 }
 select.addEventListener('change',render);
 render();
+
+// 외부 BLE/Firebase 모듈이 교육생 데이터를 갱신할 때 호출합니다.
+window.applyCPRResults = function (incoming) {
+  const normalized = {};
+  for (const trainee of ['A','B']) {
+    const item = incoming?.[trainee];
+    if (!item) continue;
+    const depth = Array.isArray(item.depth) ? item.depth.map(Number).filter(Number.isFinite) : [];
+    if (!depth.length || depth.length > 5000) throw new Error(`${trainee}의 압박 깊이 데이터가 올바르지 않습니다.`);
+    const fields = ['rate','position','recoil','breaths'];
+    if (fields.some(key => !Number.isFinite(Number(item[key])))) throw new Error(`${trainee}의 평가 데이터가 올바르지 않습니다.`);
+    normalized[trainee] = {
+      depth, rate: Number(item.rate), position: Number(item.position),
+      recoil: Number(item.recoil), breaths: Number(item.breaths), cycles: Number(item.cycles || 1)
+    };
+  }
+  if (!Object.keys(normalized).length) throw new Error('교육생 데이터가 없습니다.');
+  students = { ...students, ...normalized };
+  render();
+};
+window.getCPRResults = () => JSON.parse(JSON.stringify(students));
