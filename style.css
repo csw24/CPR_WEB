@@ -68,3 +68,6 @@ footer { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wr
 .notice-dialog p { font-size: 14px; line-height: 1.8; }
 .dialog-actions { display: flex; justify-content: flex-end; gap: 9px; margin-top: 24px; flex-wrap: wrap; }
 @media(max-width:700px) { .data-actions { padding: 14px; } .action-buttons { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); } .action-btn { padding: 11px 8px; font-size: 12px; } }
+
+.empty-feedback { padding: 26px 14px; text-align: center; color: #829ab0; font-size: 14px; border: 1px dashed #d7e7f0; border-radius: 13px; line-height: 1.8; }
+.action-btn:disabled { opacity: .5; cursor: not-allowed; transform: none; }

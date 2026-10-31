@@ -31,10 +31,9 @@
       <div class="action-buttons">
         <button id="connectBle" class="action-btn secondary" type="button">ESP32 연결</button>
         <button id="loadBle" class="action-btn primary" type="button">교육 결과 불러오기</button>
-        <button id="uploadDemo" class="action-btn demo" type="button">시연 데이터 업로드</button>
-        <button id="loadCloud" class="action-btn secondary" type="button">저장된 결과 조회</button>
+        <button id="saveImage" class="action-btn secondary" type="button" disabled>교육 결과 이미지 저장 (PNG)</button>
       </div>
-      <p id="actionMessage" class="action-message" role="status" aria-live="polite">현재 화면은 시연용 데이터입니다.</p>
+      <p id="actionMessage" class="action-message" role="status" aria-live="polite">ESP32 연결 후 교육 결과를 불러와 주세요.</p>
     </section>
 
     <dialog id="noticeDialog" class="notice-dialog" aria-labelledby="noticeTitle">
@@ -63,9 +62,9 @@
       </section>
     </div>
     <footer><span>💗 &nbsp; CPR Training Analytics &nbsp; | &nbsp; 스마트 CPR 교육을 통해 소중한 생명을 지킵니다.</span><span>EVERY COMPRESSION COUNTS</span></footer>
-    <p class="disclaimer">※ 기본 화면은 시연용 데이터입니다. 실제 BLE 통신은 ESP32 펌웨어 및 서비스 UUID 설정 후 검증이 필요합니다. 시연 데이터는 실제 측정값과 구분하여 저장됩니다.</p>
+    <p class="disclaimer">※ 교육 결과는 ESP32에서 수신한 후에만 표시됩니다. 현재 페이지는 결과를 서버에 저장하지 않습니다. BLE 통신은 ESP32 펌웨어 업로드 후 확인해야 합니다.</p>
   </main>
   <script src="script.js"></script>
-  <script type="module" src="integration.js"></script>
+  <script src="integration.js"></script>
 </body>
 </html>

@@ -1,4 +1,9 @@
-import { firebaseConfig, bleConfig } from './firebase-config.js';
+// BLE UUID는 ESP32/CPR_BLE_Test.ino의 값과 반드시 같아야 합니다.
+const bleConfig = {
+  serviceUUID: '8a5c0001-16a0-4b5c-9f8e-37ab8b0c1001',
+  resultCharacteristicUUID: '8a5c0002-16a0-4b5c-9f8e-37ab8b0c1001',
+  requestCharacteristicUUID: '8a5c0003-16a0-4b5c-9f8e-37ab8b0c1001'
+};
 
 const $ = id => document.getElementById(id);
 const message = $('actionMessage');
@@ -7,8 +12,6 @@ let bleDevice = null;
 let bleServer = null;
 let resultCharacteristic = null;
 let requestCharacteristic = null;
-let cloud = null;
-let blePayload = null;
 let pendingReceive = null;
 let receiveBuffer = '';
 const decoder = new TextDecoder();
@@ -126,8 +129,7 @@ async function loadFromBLE() {
     }
     const data = await received;
     window.applyCPRResults(data);
-    blePayload = window.getCPRResults();
-    report('ESP32 결과를 표시했습니다. 다른 기기와 공유하려면 Firebase에 별도로 저장해야 합니다.');
+    report('ESP32 교육 결과를 불러왔습니다. 교육생을 선택한 후 PNG로 저장할 수 있습니다.');
   } catch (error) {
     report(`교육 결과 수신 실패: ${error.message}`, true);
   } finally {
@@ -138,53 +140,90 @@ async function loadFromBLE() {
 }
 $('loadBle').addEventListener('click', loadFromBLE);
 
-// Firebase는 선택 기능입니다. BLE 연결 및 수신은 Firebase 없이 작동합니다.
-const configured = firebaseConfig.apiKey !== 'PASTE_API_KEY' &&
-  firebaseConfig.projectId !== 'PASTE_PROJECT_ID' &&
-  firebaseConfig.appId !== 'PASTE_APP_ID';
-async function getCloud() {
-  if (!configured) {
-    showNotice('Firebase 설정 필요', '다른 기기와 결과를 공유하려면 firebase-config.js에 프로젝트 설정값을 입력하고 Firestore 및 익명 인증을 활성화해 주세요.', false);
-    return null;
+
+// 서버 없이 현재 선택된 교육생의 보고서를 Canvas로 그려 PNG로 다운로드합니다.
+const saveButton = $('saveImage');
+function refreshSaveState() {
+  const data = window.getCPRResults();
+  saveButton.disabled = !data[$('student').value];
+}
+$('student').addEventListener('change', refreshSaveState);
+window.addEventListener('cprresultsupdated', refreshSaveState);
+refreshSaveState();
+
+function exportReport() {
+  const trainee = $('student').value;
+  const d = window.getCPRResults()[trainee];
+  if (!d) { report('먼저 ESP32에서 교육 결과를 불러와 주세요.', true); return; }
+  const canvas = document.createElement('canvas');
+  const W = 1200, H = 1390;
+  canvas.width = W * 2; canvas.height = H * 2;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(2, 2);
+  const rounded = (x,y,w,h,r,fill) => {
+    ctx.beginPath(); ctx.roundRect(x,y,w,h,r); ctx.fillStyle=fill; ctx.fill();
+  };
+  const label = (txt,x,y,size=22,color='#14254b',weight='500') => {
+    ctx.fillStyle=color; ctx.font=`${weight} ${size}px "Noto Sans KR", "Malgun Gothic", sans-serif`;
+    ctx.fillText(String(txt),x,y);
+  };
+  ctx.fillStyle='#f0f7fb'; ctx.fillRect(0,0,W,H);
+  rounded(42,40,1116,176,25,'#e1f4f7');
+  label('XI:ON  ·  CPR TRAINING',76,91,21,'#0b9eaa','700');
+  label('CPR Training Analytics',76,147,40,'#14254b','800');
+  label(`Trainee ${trainee}  |  교육 결과 보고서`,77,185,22,'#52758f','600');
+  const avg = d.depth.reduce((a,b)=>a+b,0)/d.depth.length;
+  const good = d.depth.filter(v=>v>=5&&v<=6).length/d.depth.length*100;
+  const cards = [
+    ['평균 압박 깊이',avg.toFixed(2)+' cm'],['압박 속도',d.rate+' 회/분'],
+    ['압박 위치 정확도',d.position+' %'],['깊이 기준 충족률',good.toFixed(0)+' %'],
+    ['완전 이완 비율',d.recoil+' %'],['인공호흡 횟수',d.breaths+' 회']
+  ];
+  cards.forEach(([title,val],i)=>{
+    const x=42+(i%3)*380, y=242+Math.floor(i/3)*137;
+    rounded(x,y,356,118,17,'#ffffff');
+    label(title,x+22,y+35,19,'#58748f','600');
+    label(val,x+22,y+86,34,'#127d99','800');
+  });
+  rounded(42,539,1116,425,20,'#ffffff');
+  label('압박 깊이 변화 그래프',72,590,26,'#14254b','700');
+  label('권장 범위 5–6 cm',880,588,18,'#4d7285');
+  const px=100, py=640, pw=990, ph=258, low=4, high=6.5;
+  const y=v=>py+ph-(v-low)/(high-low)*ph;
+  const x=i=>px+i*pw/Math.max(1,d.depth.length-1);
+  ctx.fillStyle='#dff7f1';ctx.fillRect(px,y(6),pw,y(5)-y(6));
+  for(let v=4;v<=6.5;v+=.5){
+    ctx.strokeStyle='#e1ebf3';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(px,y(v));ctx.lineTo(px+pw,y(v));ctx.stroke();
+    label(v.toFixed(1),58,y(v)+7,16,'#6684a5');
   }
-  if (cloud) return cloud;
-  const [{ initializeApp }, auth, store] = await Promise.all([
-    import('https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js'),
-    import('https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js'),
-    import('https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js')
-  ]);
-  const app = initializeApp(firebaseConfig);
-  await auth.signInAnonymously(auth.getAuth(app));
-  cloud = { db: store.getFirestore(app), store };
-  return cloud;
+  ctx.beginPath(); ctx.lineWidth=3; ctx.strokeStyle='#147bd0';
+  d.depth.forEach((v,i)=>i?ctx.lineTo(x(i),y(v)):ctx.moveTo(x(i),y(v)));ctx.stroke();
+  if(d.depth.length<=80) d.depth.forEach((v,i)=>{ctx.beginPath();ctx.arc(x(i),y(v),4,0,Math.PI*2);ctx.fillStyle='#147bd0';ctx.fill();});
+  label(`압박 측정 횟수: ${d.depth.length}회`,75,936,18,'#6684a5');
+  rounded(42,986,1116,307,20,'#ffffff');
+  label('맞춤형 피드백',72,1035,26,'#14254b','700');
+  const notes = [
+    ['압박 깊이',good>=80?'대체로 적절합니다.':'압박 깊이 5~6 cm를 유지하세요.'],
+    ['압박 속도',d.rate>=100&&d.rate<=120?'권장 속도 범위입니다.':'분당 100~120회를 유지하세요.'],
+    ['압박 위치',d.position>=80?'위치 정확도가 양호합니다.':'손의 압박 위치를 점검하세요.'],
+    ['흉부 이완',d.recoil>=80?'이완 상태가 양호합니다.':'압박 후 완전히 이완하세요.'],
+    ['인공호흡',d.breaths===2?'2회 수행으로 기록되었습니다.':'인공호흡 횟수를 확인하세요.']
+  ];
+  notes.forEach(([name,note],i)=>{
+    const yy=1083+i*40;
+    label('• '+name,76,yy,19,'#14254b','700');
+    label(note,288,yy,19,'#58748f');
+  });
+  label('※ 압박 위치 및 이완의 80% 판정 기준은 시연용이며 임상 검증 기준이 아닙니다.',50,1331,16,'#7790a7');
+  label('XI:ON  ·  스마트 CPR 교육 결과',50,1360,17,'#7790a7');
+  const filename=`CPR_Training_Trainee_${trainee}_${new Date().toISOString().slice(0,10)}.png`;
+  canvas.toBlob(blob=>{
+    if(!blob){report('PNG 생성에 실패했습니다.',true);return;}
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');a.href=url;a.download=filename;
+    document.body.appendChild(a);a.click();a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),60000);
+    report(`Trainee ${trainee} 교육 결과 PNG 저장을 요청했습니다. 브라우저 다운로드 목록을 확인해 주세요.`);
+  },'image/png');
 }
-async function saveDemo() {
-  const button = $('uploadDemo');
-  button.disabled = true;
-  try {
-    const connection = await getCloud();
-    if (!connection) return;
-    const { db, store } = connection;
-    await store.setDoc(store.doc(db, 'demo', 'latest'), {
-      students: window.getCPRResults(), source: 'demo', updatedAt: store.serverTimestamp()
-    });
-    report('현재 화면 데이터를 Firebase 시연용 영역에 저장했습니다. 실제 센서 기록과 혼동하지 마세요.');
-  } catch (error) { report(`저장 실패: ${error.message}`, true); }
-  finally { button.disabled = false; }
-}
-$('uploadDemo').addEventListener('click', saveDemo);
-async function loadSaved() {
-  const button = $('loadCloud');
-  button.disabled = true;
-  try {
-    const connection = await getCloud();
-    if (!connection) return;
-    const { db, store } = connection;
-    const snapshot = await store.getDoc(store.doc(db, 'demo', 'latest'));
-    if (!snapshot.exists()) { report('저장된 시연용 결과가 없습니다.'); return; }
-    window.applyCPRResults(snapshot.data().students);
-    report('Firebase의 시연용 결과를 조회했습니다.');
-  } catch (error) { report(`조회 실패: ${error.message}`, true); }
-  finally { button.disabled = false; }
-}
-$('loadCloud').addEventListener('click', loadSaved);
+saveButton.addEventListener('click',exportReport);
