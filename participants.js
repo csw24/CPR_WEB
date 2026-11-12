@@ -2,7 +2,7 @@
 (function () {
   let names;
   try { names = JSON.parse(sessionStorage.getItem('xionParticipants') || 'null'); } catch (_) {}
-  if (!names || !names.A || !names.B || names.A === names.B) {
+  if (!names || !names.A || !names.B || !names.Buid || !names.ownerUid || names.A === names.B) {
     location.replace('index.html');
     return;
   }

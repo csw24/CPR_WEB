@@ -1,0 +1,56 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    match /nicknames/{key} {
+      allow get: if signedIn();
+      allow list: if false;
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['uid','nickname','createdAt'])
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.nickname is string
+        && request.resource.data.nickname.size() >= 2
+        && request.resource.data.nickname.size() <= 20
+        && key == request.resource.data.nickname.lower()
+        && request.resource.data.createdAt == request.time
+        && !exists(/databases/$(database)/documents/users/$(request.auth.uid));
+      allow update, delete: if false;
+    }
+    match /users/{uid} {
+      allow get: if signedIn() && request.auth.uid == uid;
+      allow list: if false;
+      allow create: if signedIn() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['nickname','nicknameKey','createdAt'])
+        && request.resource.data.nickname is string
+        && request.resource.data.nicknameKey == request.resource.data.nickname.lower()
+        && request.resource.data.createdAt == request.time
+        && getAfter(/databases/$(database)/documents/nicknames/$(request.resource.data.nicknameKey)).data.uid == uid;
+      allow update, delete: if false;
+    }
+    match /records/{id} {
+      allow get, list: if signedIn() && (resource.data.recipientUid == request.auth.uid || resource.data.ownerUid == request.auth.uid);
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['ownerUid','recipientUid','role','nickname','source','data','createdAt','status'])
+        && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.recipientUid is string
+        && request.resource.data.role in ['A','B']
+        && request.resource.data.source in ['demo','ble']
+        && request.resource.data.data is map
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.nickname is string
+        && ((request.resource.data.role == 'A'
+              && request.resource.data.recipientUid == request.auth.uid
+              && request.resource.data.status == 'claimed')
+            || (request.resource.data.role == 'B'
+              && request.resource.data.recipientUid != request.auth.uid
+              && request.resource.data.status == 'pending'))
+        && get(/databases/$(database)/documents/users/$(request.resource.data.recipientUid)).data.nickname == request.resource.data.nickname;
+      allow update: if signedIn()
+        && resource.data.recipientUid == request.auth.uid
+        && resource.data.status == 'pending'
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status'])
+        && request.resource.data.status in ['claimed','rejected'];
+      allow delete: if false;
+    }
+  }
+}

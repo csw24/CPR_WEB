@@ -52,6 +52,7 @@
       </div>
     </dialog>
 
+    <section class="pending-tools history-tools" aria-label="수령 대기 기록"><div class="history-heading"><strong>내 기록 수령 대기</strong></div><div id="pendingRecords" class="record-list">확인 중…</div></section>
     <section class="history-tools" aria-label="교육 기록 관리">
       <div class="history-heading"><strong>교육 기록 관리</strong><span>테스트 데이터는 실제 측정 결과와 구분됩니다.</span></div>
       <div class="history-controls">
@@ -81,11 +82,12 @@
       </section>
     </div>
     <footer><span>💗 &nbsp; CPR Training Analytics &nbsp; | &nbsp; 스마트 CPR 교육을 통해 소중한 생명을 지킵니다.</span><span>EVERY COMPRESSION COUNTS</span></footer>
-    <p class="disclaimer">※ 가상 데이터는 테스트용입니다. 교육 기록은 현재 사용 중인 브라우저에만 저장되며, Firebase 연동 전에는 다른 기기에서 조회할 수 없습니다.</p>
+    <p class="disclaimer">※ 가상 데이터는 테스트용입니다. 교육 기록은 Firebase에 저장됩니다. 가상 데이터는 실제 측정 결과가 아닙니다.</p>
   </main>
+  <script type="module" src="firebase.js"></script>
   <script src="participants.js"></script>
   <script src="script.js"></script>
   <script src="integration.js"></script>
-  <script src="history.js"></script>
+  <script type="module" src="history.js"></script>
 </body>
 </html>
