@@ -110,3 +110,11 @@ window.applyCPRResults = function (incoming) {
   window.dispatchEvent(new CustomEvent('cprresultsupdated'));
 };
 window.getCPRResults = () => JSON.parse(JSON.stringify(students));
+
+// 선택된 교육생의 표시 데이터를 지워 다른 교육생 기록이 남지 않도록 합니다.
+window.clearCPRResult = function(role) {
+  if (role !== 'A' && role !== 'B') return;
+  students[role] = null;
+  render();
+  window.dispatchEvent(new CustomEvent('cprresultsupdated'));
+};

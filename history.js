@@ -14,6 +14,8 @@
   dateInput.value = today();
   let source = null; // demo | ble | history
   let active = null;
+  // 교육생별로 현재 화면에 표시된 기록을 추적합니다.
+  const displayed = {A:null, B:null};
   const read = () => { try { const v = JSON.parse(localStorage.getItem(KEY) || '[]'); return Array.isArray(v) ? v : []; } catch { return []; } };
   const write = records => localStorage.setItem(KEY, JSON.stringify(records));
   const copy = obj => JSON.parse(JSON.stringify(obj));
@@ -25,7 +27,7 @@
     const data = {};
     ['A','B'].forEach((role,i) => { data[role] = {depth:randomDepth(30,i),rate:i===0?110:128,position:i===0?92:76,recoil:i===0?90:70,breaths:i===0?2:1,cycles:1}; });
     window.applyCPRResults(data);
-    source = 'demo'; active = null; window.xionActiveRecord = null;
+    source = 'demo'; active = null; displayed.A=null; displayed.B=null; window.xionActiveRecord = null;
     save.disabled = false;
     announce('가상 데이터가 표시되었습니다. 저장하려면 「현재 결과 기록 저장」을 누르세요.');
   }
@@ -37,13 +39,45 @@
     const record = {id:crypto.randomUUID ? crypto.randomUUID() : String(Date.now())+'-'+Math.random(),nickname:currentName(),createdAt:new Date().toISOString(),source:source==='demo'?'demo':'ble',data:copy(results[role])};
     try { const records = read(); records.push(record); write(records); }
     catch (e) { announce('브라우저 저장 공간에 기록을 저장하지 못했습니다: '+e.message); return; }
-    active = record; window.xionActiveRecord = record;
+    active = record; displayed[role]=record; window.xionActiveRecord = record;
     announce(`${record.nickname}의 ${record.source==='demo'?'가상':'BLE'} 결과를 저장했습니다 (${fmt(record.createdAt)}).`);
     showRecords();
   }
-  function showRecords() {
+  function recordsForSelection() {
     const date = dateInput.value;
-    const mine = read().filter(r => r.nickname === currentName() && (!date || (() => { const d=new Date(r.createdAt);return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; })() === date)).sort((a,b)=>b.createdAt.localeCompare(a.createdAt));
+    return read().filter(r => r.nickname === currentName() && (!date || localDate(r.createdAt) === date))
+      .sort((a,b)=>b.createdAt.localeCompare(a.createdAt));
+  }
+  function localDate(iso) {
+    const d = new Date(iso);
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  }
+  function restoreRecord(r) {
+    const role = selector.value;
+    // 히스토리 복원은 BLE 수신이 아닙니다.
+    window.__xionInternalRestore = true;
+    try { window.applyCPRResults({[role]:copy(r.data)}); }
+    finally { window.__xionInternalRestore = false; }
+    source='history'; active=r; displayed[role]=r;
+    window.xionActiveRecord=r; save.disabled=true;
+    announce(`${r.nickname}의 ${fmt(r.createdAt)} 기록을 불러왔습니다. PNG 저장이 가능합니다.`);
+    showRecords();
+  }
+  function selectHistoryForCurrentPerson() {
+    const mine = recordsForSelection();
+    if (mine.length) {
+      restoreRecord(mine[0]);
+    } else {
+      active=null; window.xionActiveRecord=null;
+      // 날짜에 맞는 기록이 없을 때 다른 날짜/교육생 기록을 보여주지 않습니다.
+      window.clearCPRResult(selector.value);
+      source=null; save.disabled=true;
+      showRecords();
+      announce(`${currentName()}의 선택한 날짜 기록이 없습니다.`);
+    }
+  }
+  function showRecords() {
+    const mine = recordsForSelection();
     list.replaceChildren();
     if (!mine.length) { list.textContent = '선택한 교육생의 해당 날짜 기록이 없습니다.'; return; }
     mine.forEach(r => {
@@ -52,27 +86,23 @@
       const tag = document.createElement('small');tag.textContent=r.source==='demo'?'가상 데이터 · 테스트':'ESP32 BLE 데이터';
       b.append(dateText,tag);
       b.addEventListener('click', () => {
-        // 선택된 사람의 데이터만 복원하고 다른 사람의 현재 표시 데이터는 유지합니다.
-        window.applyCPRResults({[selector.value]:copy(r.data)});
-        source='history'; active=r; window.xionActiveRecord=r; save.disabled=true;
-        announce(`${r.nickname}의 ${fmt(r.createdAt)} 기록을 불러왔습니다. PNG 저장이 가능합니다.`);
-        showRecords();
+        restoreRecord(r);
       });
       list.appendChild(b);
     });
   }
   $('demoData').addEventListener('click',generateDemo);
-  $('showRecords').addEventListener('click',showRecords);
+  $('showRecords').addEventListener('click',selectHistoryForCurrentPerson);
   save.addEventListener('click',saveRecord);
-  selector.addEventListener('change', () => { active=null;window.xionActiveRecord=null;if(source==='history') source=null;save.disabled=!window.getCPRResults()[selector.value];showRecords(); });
-  dateInput.addEventListener('change',showRecords);
+  selector.addEventListener('change',selectHistoryForCurrentPerson);
+  dateInput.addEventListener('change',selectHistoryForCurrentPerson);
   // BLE 수신 성공을 감지합니다. 수신 결과는 자동 저장하지 않습니다.
   // demo/history 복원에서도 이 이벤트가 발생하므로 별도 플래그로 구분합니다.
   const original = window.applyCPRResults;
   window.applyCPRResults = function (data) {
     const result = original(data);
-    if (!window.__xionInternalRestore) { source='ble';active=null;window.xionActiveRecord=null;save.disabled=!window.getCPRResults()[selector.value]; }
+    if (!window.__xionInternalRestore) { source='ble';active=null;displayed.A=null;displayed.B=null;window.xionActiveRecord=null;save.disabled=!window.getCPRResults()[selector.value]; }
     return result;
   };
-  showRecords();
+  selectHistoryForCurrentPerson();
 })();
