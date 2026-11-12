@@ -71,3 +71,6 @@ footer { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wr
 
 .empty-feedback { padding: 26px 14px; text-align: center; color: #829ab0; font-size: 14px; border: 1px dashed #d7e7f0; border-radius: 13px; line-height: 1.8; }
 .action-btn:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+
+/* 교육생 변경 버튼만 추가. 기존 대시보드 레이아웃은 유지 */
+.change-participants { margin-top: 10px; padding: 7px 10px; border: 1px solid #cbe7ec; border-radius: 9px; background: #eef8fb; color: #136e83; font: 700 12px 'Noto Sans KR',sans-serif; cursor: pointer; }

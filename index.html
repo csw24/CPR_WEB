@@ -1,70 +1,54 @@
 <!doctype html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>CPR Training Analytics | XI:ON</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>교육생 입장 | XI:ON</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing:border-box; }
+    body { margin:0; min-height:100vh; display:grid; place-items:center; padding:24px; background:radial-gradient(ellipse at 20% 0%,#fafdff,#eaf3fc 72%); font-family:'DM Sans','Noto Sans KR',sans-serif; color:#14254b; }
+    .card { width:min(100%,480px); padding:42px 36px; background:white; border:1px solid #e1f0f7; border-radius:28px; box-shadow:0 15px 40px #466b9620; }
+    .logo { display:flex; align-items:center; justify-content:center; gap:12px; margin-bottom:14px; }
+    .heart { width:56px; height:56px; display:grid; place-items:center; border-radius:15px; color:white; background:linear-gradient(135deg,#64dfd3,#0ba9b8); font-size:34px; }
+    h1 { margin:0; font-size:36px; letter-spacing:-1px; }
+    .subtitle { text-align:center; color:#6684a5; margin:0 0 30px; }
+    label { display:block; margin:18px 0 8px; color:#126e7c; font-weight:800; }
+    input { display:block; width:100%; padding:14px 15px; font:600 16px 'Noto Sans KR',sans-serif; border:1px solid #cbdbe9; border-radius:11px; outline-offset:2px; }
+    input:focus { outline:2px solid #0c9eaa; }
+    button { width:100%; margin-top:26px; padding:15px; border:0; border-radius:12px; background:#0c9eaa; color:white; font:800 16px 'Noto Sans KR',sans-serif; cursor:pointer; }
+    button:hover { background:#087d89; }
+    .help { text-align:center; margin:16px 0 0; font-size:12px; line-height:1.7; color:#6684a5; }
+    .error { color:#b54735; min-height:20px; font-size:13px; margin-top:12px; text-align:center; }
+    @media(max-width:500px){ .card {padding:30px 22px;} }
+  </style>
 </head>
 <body>
-  <main>
-    <header class="hero">
-      <div class="hero-copy">
-        <div class="brand-icon" aria-hidden="true">♥<span>⌁</span></div>
-        <div>
-          <small>XI:ON · CPR TRAINING</small>
-          <h1>CPR Training Analytics</h1>
-          <p>스마트 CPR 교육 결과 분석 시스템</p>
-        </div>
-      </div>
-      <div class="trainee-box">
-        <label for="student">◉ &nbsp; Trainee</label>
-        <select id="student"><option value="A">Trainee A</option><option value="B">Trainee B</option></select>
-      </div>
-      <div class="hero-wave" aria-hidden="true">♡ &nbsp;⌁ &nbsp; ♡</div>
-    </header>
-
-    <section class="data-actions" aria-label="교육 결과 관리">
-      <div class="action-buttons">
-        <button id="connectBle" class="action-btn secondary" type="button">ESP32 연결</button>
-        <button id="loadBle" class="action-btn primary" type="button">교육 결과 불러오기</button>
-        <button id="saveImage" class="action-btn secondary" type="button" disabled>교육 결과 이미지 저장 (PNG)</button>
-      </div>
-      <p id="actionMessage" class="action-message" role="status" aria-live="polite">ESP32 연결 후 교육 결과를 불러와 주세요.</p>
-    </section>
-
-    <dialog id="noticeDialog" class="notice-dialog" aria-labelledby="noticeTitle">
-      <h2 id="noticeTitle">ESP32 연결 필요</h2>
-      <p id="noticeText">교육 결과를 불러오려면 ESP32를 먼저 연결해 주세요.</p>
-      <div class="dialog-actions">
-        <button id="noticeCancel" type="button" class="action-btn secondary">닫기</button>
-        <button id="noticeConnect" type="button" class="action-btn primary">ESP32 연결하기</button>
-      </div>
-    </dialog>
-
-    <section class="cards" id="metrics" aria-label="CPR 수행 지표"></section>
-
-    <div class="details-grid">
-      <section class="panel chart-panel">
-        <div class="panel-heading">
-          <h2><span class="heading-icon">⌁</span> 압박 깊이 변화 그래프</h2>
-          <span class="legend"><i></i> 권장 범위 (5~6 cm) <b>●</b> 측정값</span>
-        </div>
-        <canvas id="chart" width="850" height="330" role="img" aria-label="압박 깊이 그래프"></canvas>
-        <div class="axis-label">압박 순서</div>
-      </section>
-      <section class="panel feedback-panel">
-        <h2><span class="heading-icon">◉</span> 맞춤형 피드백</h2>
-        <div id="feedback"></div>
-      </section>
-    </div>
-    <footer><span>💗 &nbsp; CPR Training Analytics &nbsp; | &nbsp; 스마트 CPR 교육을 통해 소중한 생명을 지킵니다.</span><span>EVERY COMPRESSION COUNTS</span></footer>
-    <p class="disclaimer">※ 교육 결과는 ESP32에서 수신한 후에만 표시됩니다. 현재 페이지는 결과를 서버에 저장하지 않습니다. BLE 통신은 ESP32 펌웨어 업로드 후 확인해야 합니다.</p>
-  </main>
-  <script src="script.js"></script>
-  <script src="integration.js"></script>
+  <section class="card" aria-label="교육생 입장">
+    <div class="logo"><div class="heart" aria-hidden="true">♥</div><h1>XI:ON</h1></div>
+    <p class="subtitle">CPR Training Analytics</p>
+    <form id="entryForm">
+      <label for="st1">ST1 교육생 ID</label>
+      <input id="st1" name="st1" placeholder="예: 스파이더맨" maxlength="40" autocomplete="off" required>
+      <label for="st2">ST2 교육생 ID</label>
+      <input id="st2" name="st2" placeholder="예: 아이언맨" maxlength="40" autocomplete="off" required>
+      <p class="error" id="error" role="alert"></p>
+      <button type="submit">대시보드 입장하기</button>
+    </form>
+    <p class="help">한 번의 교육에는 두 명이 참여합니다.<br>기존 ID도, 처음 사용하는 ID도 입력할 수 있습니다.</p>
+  </section>
+  <script>
+    document.getElementById('entryForm').addEventListener('submit', event => {
+      event.preventDefault();
+      const A = document.getElementById('st1').value.trim();
+      const B = document.getElementById('st2').value.trim();
+      const error = document.getElementById('error');
+      if (!A || !B) { error.textContent='두 교육생 ID를 모두 입력해 주세요.'; return; }
+      if (A === B) { error.textContent='ST1과 ST2에는 서로 다른 ID를 입력해 주세요.'; return; }
+      sessionStorage.setItem('xionParticipants', JSON.stringify({ A, B }));
+      location.assign('dashboard.html');
+    });
+  </script>
 </body>
 </html>
