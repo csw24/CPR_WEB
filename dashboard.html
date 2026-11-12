@@ -52,6 +52,18 @@
       </div>
     </dialog>
 
+    <section class="history-tools" aria-label="교육 기록 관리">
+      <div class="history-heading"><strong>교육 기록 관리</strong><span>테스트 데이터는 실제 측정 결과와 구분됩니다.</span></div>
+      <div class="history-controls">
+        <button type="button" id="demoData" class="action-btn secondary">가상 데이터 생성</button>
+        <button type="button" id="saveRecord" class="action-btn primary" disabled>현재 결과 기록 저장</button>
+        <label for="recordDate">날짜</label><input id="recordDate" type="date">
+        <button type="button" id="showRecords" class="action-btn secondary">기록 조회</button>
+      </div>
+      <div id="recordList" class="record-list" aria-live="polite">교육생과 날짜를 선택한 후 기록 조회를 눌러 주세요.</div>
+      <p id="historyMessage" class="history-message" role="status"></p>
+    </section>
+
     <section class="cards" id="metrics" aria-label="CPR 수행 지표"></section>
 
     <div class="details-grid">
@@ -69,10 +81,11 @@
       </section>
     </div>
     <footer><span>💗 &nbsp; CPR Training Analytics &nbsp; | &nbsp; 스마트 CPR 교육을 통해 소중한 생명을 지킵니다.</span><span>EVERY COMPRESSION COUNTS</span></footer>
-    <p class="disclaimer">※ 교육 결과는 ESP32에서 수신한 후에만 표시됩니다. 현재 페이지는 결과를 서버에 저장하지 않습니다. BLE 통신은 ESP32 펌웨어 업로드 후 확인해야 합니다.</p>
+    <p class="disclaimer">※ 가상 데이터는 테스트용입니다. 교육 기록은 현재 사용 중인 브라우저에만 저장되며, Firebase 연동 전에는 다른 기기에서 조회할 수 없습니다.</p>
   </main>
   <script src="participants.js"></script>
   <script src="script.js"></script>
   <script src="integration.js"></script>
+  <script src="history.js"></script>
 </body>
 </html>

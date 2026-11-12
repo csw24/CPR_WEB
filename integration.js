@@ -154,6 +154,9 @@ refreshSaveState();
 function exportReport() {
   const trainee = $('student').value;
   const d = window.getCPRResults()[trainee];
+  const nickname = (JSON.parse(sessionStorage.getItem("xionParticipants") || "{}") || {})[trainee] || `Trainee ${trainee}`;
+  const recordInfo = window.xionActiveRecord || null;
+  const reportDate = recordInfo?.createdAt ? new Date(recordInfo.createdAt).toLocaleString("ko-KR") : new Date().toLocaleString("ko-KR");
   if (!d) { report('먼저 ESP32에서 교육 결과를 불러와 주세요.', true); return; }
   const canvas = document.createElement('canvas');
   const W = 1200, H = 1390;
@@ -171,7 +174,7 @@ function exportReport() {
   rounded(42,40,1116,176,25,'#e1f4f7');
   label('XI:ON  ·  CPR TRAINING',76,91,21,'#0b9eaa','700');
   label('CPR Training Analytics',76,147,40,'#14254b','800');
-  label(`Trainee ${trainee}  |  교육 결과 보고서`,77,185,22,'#52758f','600');
+  label(`${nickname}  |  ${reportDate}  |  교육 결과 보고서`,77,185,20,'#52758f','600');
   const avg = d.depth.reduce((a,b)=>a+b,0)/d.depth.length;
   const good = d.depth.filter(v=>v>=5&&v<=6).length/d.depth.length*100;
   const cards = [
@@ -216,14 +219,14 @@ function exportReport() {
   });
   label('※ 압박 위치 및 이완의 80% 판정 기준은 시연용이며 임상 검증 기준이 아닙니다.',50,1331,16,'#7790a7');
   label('XI:ON  ·  스마트 CPR 교육 결과',50,1360,17,'#7790a7');
-  const filename=`CPR_Training_Trainee_${trainee}_${new Date().toISOString().slice(0,10)}.png`;
+  const filename=`CPR_Training_${nickname.replace(/[^a-zA-Z0-9가-힣_-]/g,"_")}_${(recordInfo?.createdAt || new Date().toISOString()).slice(0,10)}.png`;
   canvas.toBlob(blob=>{
     if(!blob){report('PNG 생성에 실패했습니다.',true);return;}
     const url=URL.createObjectURL(blob);
     const a=document.createElement('a');a.href=url;a.download=filename;
     document.body.appendChild(a);a.click();a.remove();
     setTimeout(()=>URL.revokeObjectURL(url),60000);
-    report(`Trainee ${trainee} 교육 결과 PNG 저장을 요청했습니다. 브라우저 다운로드 목록을 확인해 주세요.`);
+    report(`${nickname} 교육 결과 PNG 저장을 요청했습니다. 브라우저 다운로드 목록을 확인해 주세요.`);
   },'image/png');
 }
 saveButton.addEventListener('click',exportReport);

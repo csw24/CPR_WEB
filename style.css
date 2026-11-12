@@ -74,3 +74,10 @@ footer { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wr
 
 /* 교육생 변경 버튼만 추가. 기존 대시보드 레이아웃은 유지 */
 .change-participants { margin-top: 10px; padding: 7px 10px; border: 1px solid #cbe7ec; border-radius: 9px; background: #eef8fb; color: #136e83; font: 700 12px 'Noto Sans KR',sans-serif; cursor: pointer; }
+
+/* 교육 기록 관리: 기존 대시보드 구성과 버튼은 유지 */
+.history-tools{margin:22px 0;background:#fff;border:1px solid #e0ebf3;border-radius:16px;padding:22px;box-shadow:0 8px 24px #172b400a}
+.history-heading{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:16px}.history-heading strong{font-size:19px;color:#172b40}.history-heading span{font-size:12px;color:#69849b}
+.history-controls{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.history-controls label{font-size:13px;font-weight:700;color:#38566f}.history-controls input{padding:10px;border:1px solid #cbdde8;border-radius:9px;color:#172b40;font:inherit}
+.record-list{margin-top:15px;display:flex;flex-wrap:wrap;gap:9px;color:#69849b;font-size:13px}.record-item{border:1px solid #d8e6ef;background:#f6fafc;color:#24465f;border-radius:10px;padding:10px 12px;cursor:pointer;text-align:left;font:inherit}.record-item:hover{border-color:#0c9eaa}.record-item.active{border-color:#0c9eaa;background:#e9f9f7}.record-item small{display:block;color:#6a8193;margin-top:3px}.history-message{min-height:16px;margin:10px 0 0;color:#27768a;font-size:13px}
+@media(max-width:640px){.history-tools{padding:15px}.history-controls>*{flex-grow:1}.history-controls input{min-width:0}}
