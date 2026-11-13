@@ -99,3 +99,10 @@ footer { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wr
 
 .xion-compare-actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
 @media(max-width:650px){.xion-compare-actions{width:100%}.xion-compare-actions button{flex:1}}
+
+/* 최근 최대 5회 추세 그래프: 데스크톱 3열, 작은 화면에서는 가독성 유지 */
+.xion-trend-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:18px}
+.xion-trend-grid .xion-compare-panel{min-width:0;margin-bottom:0;padding:16px 12px}
+.xion-trend-grid .xion-compare-panel h3{font-size:15px;min-height:38px}
+.xion-trend-grid .xion-compare-sub{font-size:11px;min-height:34px;margin-bottom:8px}
+@media(max-width:850px){.xion-trend-grid{grid-template-columns:1fr}}
