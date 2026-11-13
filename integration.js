@@ -1,8 +1,8 @@
-// BLE UUID는 ESP32/CPR_BLE_Test.ino의 값과 반드시 같아야 합니다.
+// BLE UUID는 Final_Integrated_Sensor_Code_1114_BLE.ino와 일치합니다.
 const bleConfig = {
-  serviceUUID: '8a5c0001-16a0-4b5c-9f8e-37ab8b0c1001',
-  resultCharacteristicUUID: '8a5c0002-16a0-4b5c-9f8e-37ab8b0c1001',
-  requestCharacteristicUUID: '8a5c0003-16a0-4b5c-9f8e-37ab8b0c1001'
+  serviceUUID: 'f7e10001-6b39-4e2e-9c2a-11c0de000001',
+  resultCharacteristicUUID: 'f7e10002-6b39-4e2e-9c2a-11c0de000001',
+  requestCharacteristicUUID: 'f7e10003-6b39-4e2e-9c2a-11c0de000001'
 };
 
 const $ = id => document.getElementById(id);
