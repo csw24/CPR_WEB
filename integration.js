@@ -72,74 +72,84 @@ async function connectBLE() {
 }
 $('connectBle').addEventListener('click', connectBLE);
 
-// BLE 알림은 작은 패킷으로 쪼개져 도착합니다.
-// 프로토콜: UTF-8 JSON 한 건을 여러 번 notify하고 마지막에 '\n'을 보냅니다.
-// JSON 문자열 안의 줄바꿈은 JSON.stringify에 의해 이스케이프됩니다.
+// ESP32 protocol: BEGIN:length -> UTF-8 JSON fragments -> END.
+// This is a finished session summary, not a real-time stream.
+let expectedLength = -1;
 function onNotification(event) {
   if (!pendingReceive) return;
-  const value = event.target.value;
-  const bytes = new Uint8Array(value.buffer, value.byteOffset, value.byteLength);
-  receiveBuffer += decoder.decode(bytes, { stream: true });
-  if (receiveBuffer.length > 100000) {
-    pendingReceive.reject(new Error('수신 데이터가 허용 크기를 초과했습니다.'));
-    pendingReceive = null;
-    receiveBuffer = '';
-    return;
+  const v=event.target.value;
+  const chunk=decoder.decode(new Uint8Array(v.buffer,v.byteOffset,v.byteLength));
+  if (chunk.startsWith('BEGIN:')) {
+    expectedLength=Number(chunk.slice(6)); receiveBuffer=''; return;
   }
-  const end = receiveBuffer.indexOf('\n');
-  if (end < 0) return;
-  const line = receiveBuffer.slice(0, end).trim();
-  try {
-    const parsed = JSON.parse(line);
-    pendingReceive.resolve(parsed.students ?? parsed);
-  } catch (error) {
-    pendingReceive.reject(new Error(`JSON 해석 실패: ${error.message}`));
-  } finally {
-    pendingReceive = null;
-    receiveBuffer = '';
-  }
-}
-
-async function loadFromBLE() {
-  if (!bleServer?.connected || !requestCharacteristic || !resultCharacteristic) {
-    showNotice('ESP32 연결 필요', '교육 결과를 불러오려면 먼저 ESP32를 연결해 주세요.');
-    return;
-  }
-  if (pendingReceive) return;
-  const button = $('loadBle');
-  button.disabled = true;
-  receiveBuffer = '';
-  decoder.decode(); // 이전 디코더 스트림 초기화
-  let timer;
-  try {
-    report('ESP32에서 교육 결과를 수신하는 중입니다…');
-    const received = new Promise((resolve, reject) => {
-      pendingReceive = { resolve, reject };
-      timer = setTimeout(() => {
-        if (pendingReceive) {
-          pendingReceive = null;
-          reject(new Error('15초 내에 결과가 도착하지 않았습니다.'));
-        }
-      }, 15000);
-    });
+  if (chunk==='END') {
+    const pending=pendingReceive;pendingReceive=null;
     try {
-      await requestCharacteristic.writeValueWithResponse(new TextEncoder().encode('GET'));
-    } catch (error) {
-      if (pendingReceive) { pendingReceive.reject(error); pendingReceive = null; }
-    }
-    const data = await received;
-    window.applyCPRResults(data);
-    report('ESP32 교육 결과를 불러왔습니다. 교육생을 선택한 후 PNG로 저장할 수 있습니다.');
-  } catch (error) {
-    report(`교육 결과 수신 실패: ${error.message}`, true);
-  } finally {
-    clearTimeout(timer);
-    pendingReceive = null;
-    button.disabled = false;
+      if(expectedLength<0) throw Error('BEGIN 신호를 받지 못했습니다.');
+      if(receiveBuffer.length!==expectedLength) throw Error(`데이터 누락: ${receiveBuffer.length}/${expectedLength} bytes`);
+      pending.resolve(JSON.parse(receiveBuffer));
+    } catch(e){pending.reject(e);}
+    finally{receiveBuffer='';expectedLength=-1;}
+    return;
   }
+  if(expectedLength<0)return;
+  receiveBuffer+=chunk;
+  if(receiveBuffer.length>100000){pendingReceive.reject(Error('데이터가 너무 큽니다.'));pendingReceive=null;receiveBuffer='';}
 }
-$('loadBle').addEventListener('click', loadFromBLE);
 
+function showSessionSummary(d) {
+  let host=document.getElementById('xionRawSession');
+  if(!host){
+    host=document.createElement('section');host.id='xionRawSession';
+    host.className='panel';host.style.margin='18px 0';
+    document.querySelector('.data-actions').insertAdjacentElement('afterend',host);
+  }
+  const fmt=(v,digits=1)=>Number.isFinite(Number(v))?Number(v).toFixed(digits):'—';
+  const delta=Number(d.tofMaxMm)-Number(d.tofMinMm);
+  const mins=Number(d.durationMs)/60000;
+  const uid=(d.rfidUIDs||'').split(',').filter(Boolean);
+  const fields=[
+    ['교육 시간',fmt(mins,2)+' 분'],
+    ['FSR 1 평균',fmt(d.fsr1MeanRaw,0)+' RAW'],
+    ['FSR 2 평균',fmt(d.fsr2MeanRaw,0)+' RAW'],
+    ['FSR 1 최대',fmt(d.fsr1PeakRaw,0)+' RAW'],
+    ['FSR 2 최대',fmt(d.fsr2PeakRaw,0)+' RAW'],
+    ['ToF 평균 거리',fmt(d.tofMeanMm,1)+' mm'],
+    ['ToF 거리 범위',fmt(d.tofMinMm,0)+' ~ '+fmt(d.tofMaxMm,0)+' mm'],
+    ['거리 전체 변동폭',fmt(delta,0)+' mm'],
+    ['RFID 인식 UID',uid.length?uid.join(', '):'인식 없음'],
+    ['측정 샘플',`${d.fsrSamples||0} FSR / ${d.tofSamples||0} ToF`]
+  ];
+  host.replaceChildren();
+  const title=document.createElement('h2');title.textContent=`교육 ${d.session??'—'}회차 · 종료된 교육의 누적 결과`;host.append(title);
+  const note=document.createElement('p');note.style='font-size:13px;margin-bottom:16px';note.textContent='실측 원시값 기반 통계입니다. RAW는 압박 힘(N)이 아니며 ToF 거리 변동폭은 압박 깊이(cm)가 아닙니다. 아직 학생별 분리·압박 속도·정확도·이완율은 계산하지 않습니다.';host.append(note);
+  const table=document.createElement('table');table.style='width:100%;border-collapse:collapse;font-size:15px';
+  fields.forEach(([name,value])=>{const tr=document.createElement('tr');tr.style.borderBottom='1px solid #dceaf1';for(const [txt,bold] of [[name,true],[value,false]]){const cell=document.createElement('td');cell.style='padding:10px 8px';cell.textContent=txt;if(bold)cell.style.fontWeight='700';tr.append(cell);}table.append(tr);});host.append(table);
+  const canvas=document.createElement('canvas');canvas.width=850;canvas.height=290;canvas.style='margin-top:22px;width:100%';host.append(canvas);
+  const c=canvas.getContext('2d'),w=canvas.width,h=canvas.height,pad=55;
+  c.clearRect(0,0,w,h);c.fillStyle='#6684a5';c.font='15px sans-serif';
+  c.fillText('ToF 거리 측정 요약 (mm)',pad,24);
+  const bars=[['최소',Number(d.tofMinMm)],['평균',Number(d.tofMeanMm)],['최대',Number(d.tofMaxMm)]];
+  const max=Math.max(1,...bars.map(x=>x[1]));
+  bars.forEach(([label,val],i)=>{const x=125+i*235,bh=Math.max(1,val/max*175);c.fillStyle='#1973a9';c.fillRect(x,225-bh,75,bh);c.fillStyle='#172b40';c.fillText(label,x+16,250);c.fillText(fmt(val,1),x+5,225-bh-8);});
+  window.xionRawSession=d;
+}
+async function loadFromBLE(){
+  if(!bleServer?.connected||!requestCharacteristic||!resultCharacteristic){showNotice('ESP32 연결 필요','먼저 ESP32에 연결해 주세요.');return;}
+  if(pendingReceive)return;
+  const button=$('loadBle');button.disabled=true;receiveBuffer='';expectedLength=-1;
+  let timer;
+  try{
+    report('종료된 교육의 누적 결과를 수신 중입니다…');
+    const received=new Promise((resolve,reject)=>{pendingReceive={resolve,reject};timer=setTimeout(()=>{if(pendingReceive){pendingReceive=null;reject(Error('30초 내에 결과가 도착하지 않았습니다. 택트 스위치로 교육을 종료했는지 확인하세요.'));}},30000);});
+    try{await requestCharacteristic.writeValueWithResponse(new TextEncoder().encode('GET'));}catch(e){if(pendingReceive){pendingReceive.reject(e);pendingReceive=null;}}
+    const d=await received;
+    if(d.version!==1||!('fsrSamples' in d)||!('tofSamples' in d))throw Error('ESP32 교육 결과 형식이 일치하지 않습니다.');
+    showSessionSummary(d);
+    report('교육 종료 후 누적된 원시 측정 결과를 불러왔습니다. 아래 요약 표와 그래프를 확인하세요.');
+  }catch(e){report('교육 결과 수신 실패: '+e.message,true);}finally{clearTimeout(timer);pendingReceive=null;button.disabled=false;}
+}
+$('loadBle').addEventListener('click',loadFromBLE);
 
 // 서버 없이 현재 선택된 교육생의 보고서를 Canvas로 그려 PNG로 다운로드합니다.
 const saveButton = $('saveImage');
