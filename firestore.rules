@@ -34,7 +34,7 @@ service cloud.firestore {
         && request.resource.data.ownerUid == request.auth.uid
         && request.resource.data.recipientUid is string
         && request.resource.data.role in ['A','B']
-        && request.resource.data.source in ['demo','ble']
+        && request.resource.data.source in ['demo','ble','ble_raw']
         && request.resource.data.data is map
         && request.resource.data.createdAt == request.time
         && request.resource.data.nickname is string

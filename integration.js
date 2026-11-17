@@ -97,43 +97,82 @@ function onNotification(event) {
   if(receiveBuffer.length>100000){pendingReceive.reject(Error('데이터가 너무 큽니다.'));pendingReceive=null;receiveBuffer='';}
 }
 
-function showSessionSummary(d) {
-  let host=document.getElementById('xionRawSession');
-  if(!host){
-    host=document.createElement('section');host.id='xionRawSession';
-    host.className='panel';host.style.margin='18px 0';
-    document.querySelector('.data-actions').insertAdjacentElement('afterend',host);
-  }
-  const fmt=(v,digits=1)=>Number.isFinite(Number(v))?Number(v).toFixed(digits):'—';
-  const delta=Number(d.tofMaxMm)-Number(d.tofMinMm);
-  const mins=Number(d.durationMs)/60000;
-  const uid=(d.rfidUIDs||'').split(',').filter(Boolean);
-  const fields=[
-    ['교육 시간',fmt(mins,2)+' 분'],
-    ['FSR 1 평균',fmt(d.fsr1MeanRaw,0)+' RAW'],
-    ['FSR 2 평균',fmt(d.fsr2MeanRaw,0)+' RAW'],
-    ['FSR 1 최대',fmt(d.fsr1PeakRaw,0)+' RAW'],
-    ['FSR 2 최대',fmt(d.fsr2PeakRaw,0)+' RAW'],
-    ['ToF 평균 거리',fmt(d.tofMeanMm,1)+' mm'],
-    ['ToF 거리 범위',fmt(d.tofMinMm,0)+' ~ '+fmt(d.tofMaxMm,0)+' mm'],
-    ['거리 전체 변동폭',fmt(delta,0)+' mm'],
-    ['RFID 인식 UID',uid.length?uid.join(', '):'인식 없음'],
-    ['측정 샘플',`${d.fsrSamples||0} FSR / ${d.tofSamples||0} ToF`]
-  ];
-  host.replaceChildren();
-  const title=document.createElement('h2');title.textContent=`교육 ${d.session??'—'}회차 · 종료된 교육의 누적 결과`;host.append(title);
-  const note=document.createElement('p');note.style='font-size:13px;margin-bottom:16px';note.textContent='실측 원시값 기반 통계입니다. RAW는 압박 힘(N)이 아니며 ToF 거리 변동폭은 압박 깊이(cm)가 아닙니다. 아직 학생별 분리·압박 속도·정확도·이완율은 계산하지 않습니다.';host.append(note);
-  const table=document.createElement('table');table.style='width:100%;border-collapse:collapse;font-size:15px';
-  fields.forEach(([name,value])=>{const tr=document.createElement('tr');tr.style.borderBottom='1px solid #dceaf1';for(const [txt,bold] of [[name,true],[value,false]]){const cell=document.createElement('td');cell.style='padding:10px 8px';cell.textContent=txt;if(bold)cell.style.fontWeight='700';tr.append(cell);}table.append(tr);});host.append(table);
-  const canvas=document.createElement('canvas');canvas.width=850;canvas.height=290;canvas.style='margin-top:22px;width:100%';host.append(canvas);
-  const c=canvas.getContext('2d'),w=canvas.width,h=canvas.height,pad=55;
-  c.clearRect(0,0,w,h);c.fillStyle='#6684a5';c.font='15px sans-serif';
-  c.fillText('ToF 거리 측정 요약 (mm)',pad,24);
-  const bars=[['최소',Number(d.tofMinMm)],['평균',Number(d.tofMeanMm)],['최대',Number(d.tofMaxMm)]];
-  const max=Math.max(1,...bars.map(x=>x[1]));
-  bars.forEach(([label,val],i)=>{const x=125+i*235,bh=Math.max(1,val/max*175);c.fillStyle='#1973a9';c.fillRect(x,225-bh,75,bh);c.fillStyle='#172b40';c.fillText(label,x+16,250);c.fillText(fmt(val,1),x+5,225-bh-8);});
-  window.xionRawSession=d;
+let latestRawSession=null;
+const rawFmt=(v,d=1)=>v===null||v===undefined||v===''||!Number.isFinite(Number(v))?'—':Number(v).toFixed(d);
+const rawEsc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function rawRows(stats){
+  if(!stats)return '<p>해당 교육생의 데이터가 없습니다.</p>';
+  const rows=[['RFID UID',stats.uid||'—'],['FSR 측정 샘플',stats.fsrSamples??0],['FSR1 평균',rawFmt(stats.fsr1MeanRaw,1)+' RAW'],['FSR2 평균',rawFmt(stats.fsr2MeanRaw,1)+' RAW'],['FSR1 최대',rawFmt(stats.fsr1PeakRaw,0)+' RAW'],['FSR2 최대',rawFmt(stats.fsr2PeakRaw,0)+' RAW'],['ToF 측정 샘플',stats.tofSamples??0],['ToF 평균 거리',rawFmt(stats.tofMeanMm,1)+' mm'],['ToF 최소 거리',stats.tofSamples?rawFmt(stats.tofMinMm,0)+' mm':'—'],['ToF 최대 거리',stats.tofSamples?rawFmt(stats.tofMaxMm,0)+' mm':'—']];
+  return '<table class="xion-raw-table">'+rows.map(([k,v])=>`<tr><th>${rawEsc(k)}</th><td>${rawEsc(v)}</td></tr>`).join('')+'</table>';
 }
+function showSessionSummary(d){
+  latestRawSession=d;window.xionRawSession=d;
+  const host=$('xionRawSession');host.hidden=false;
+  const participants=JSON.parse(sessionStorage.getItem('xionParticipants')||'{}');
+  $('xionRawSummary').innerHTML=`<div class="xion-raw-summary"><span>교육 ${rawEsc(d.session??'—')}회차</span><span>전체 교육시간 ${rawFmt(Number(d.durationMs)/1000,1)}초</span><span>완료된 교대 ${rawEsc(d.switchCount??0)}회</span><span>평균 교대 소요 ${rawFmt(Number(d.avgSwitchGapMs)/1000,2)}초</span></div>`;
+  $('xionRawStudents').innerHTML=['A','B'].map((role)=>`<article class="xion-raw-student"><h3>${role==='A'?'ST1':'ST2'} · ${rawEsc(participants[role]||role)}</h3>${rawRows(d[role])}</article>`).join('');
+  const gaps=Array.isArray(d.switchGapsMs)?d.switchGapsMs:[];
+  $('xionRawSwitches').innerHTML=`<h3>교대 소요시간</h3><p class="xion-raw-note">2분 종료 시점부터 다음 교육생 RFID 태깅까지의 시간</p>`+(gaps.length?`<div class="xion-gap-list">${gaps.map((ms,i)=>`<div><strong>${i+1}번째 교대</strong><span>${rawFmt(Number(ms)/1000,2)}초</span></div>`).join('')}</div>`:'<p class="xion-raw-note">완료된 2분 교대 기록이 없습니다.</p>');
+  $('xionRawPNG').disabled=false;
+  const available=['A','B'].filter(role=>Number(d[role]?.fsrSamples)>0||Number(d[role]?.tofSamples)>0);
+  const saveBoth=$('xionRawSaveBoth');
+  saveBoth.disabled=!available.length;
+  saveBoth.textContent='ST1·ST2 각 계정에 기록 저장';
+  $('xionRawMessage').textContent='첫 번째 교육생(ST1)은 ST1 계정에, 두 번째 교육생(ST2)은 ST2 계정의 수령 대기로 저장합니다. 한 번만 누르면 두 기록을 각각 전송합니다.';
+}
+// A = RFID 89BC3C8E (ST1), B = RFID 87BC3C8E (ST2).
+// Retry a failed role without duplicating a successfully saved role in this page session.
+let savedRawRoles=new Set();
+let savedRawSession=null;
+async function saveBothRawRoles(){
+  const d=latestRawSession;
+  if(!d)return;
+  const names=JSON.parse(sessionStorage.getItem('xionParticipants')||'{}');
+  const btn=$('xionRawSaveBoth');
+  if(!window.XION?.user||window.XION.user.uid!==names.ownerUid){$('xionRawMessage').textContent='ST1 로그인 계정에서만 교육 결과를 저장할 수 있습니다.';return;}
+  if(!names.Buid){$('xionRawMessage').textContent='ST2 계정이 등록되지 않았습니다.';return;}
+  if(d.A?.uid && String(d.A.uid).toUpperCase()!=='89BC3C8E' || d.B?.uid && String(d.B.uid).toUpperCase()!=='87BC3C8E'){
+    $('xionRawMessage').textContent='RFID UID와 교육생 배정이 일치하지 않아 저장을 중단했습니다.';return;
+  }
+  btn.disabled=true;
+  const result=[];
+  for(const role of ['A','B']){
+    const st=d[role];
+    if(!(Number(st?.fsrSamples)>0||Number(st?.tofSamples)>0)){result.push(`${role==='A'?'ST1':'ST2'}: 측정값 없음`);continue;}
+    if(savedRawRoles.has(role)){result.push(`${role==='A'?'ST1':'ST2'}: 이미 저장됨`);continue;}
+    try{
+      await window.XION.saveResult(role,{...st,switchGapsMs:d.switchGapsMs||[],switchCount:d.switchCount||0,avgSwitchGapMs:d.avgSwitchGapMs||0,session:d.session,durationMs:d.durationMs},'ble_raw',names);
+      savedRawRoles.add(role);
+      result.push(role==='A'?'ST1: 본인 계정 저장 완료':'ST2: 해당 계정으로 전송 완료(수령 대기)');
+      window.dispatchEvent(new Event('xionrawsaved'));
+    }catch(e){result.push(`${role==='A'?'ST1':'ST2'}: 실패 (${e.message})`);}
+  }
+  $('xionRawMessage').textContent=result.join(' / ');
+  const remaining=['A','B'].some(role=>(Number(d[role]?.fsrSamples)>0||Number(d[role]?.tofSamples)>0)&&!savedRawRoles.has(role));
+  btn.disabled=!remaining;
+  btn.textContent=remaining?'저장 실패한 교육생 다시 시도':'각 계정 저장 완료';
+}
+$('xionRawSaveBoth').addEventListener('click',saveBothRawRoles);
+function saveRawPNG(){
+  const d=latestRawSession;if(!d)return;
+  const names=JSON.parse(sessionStorage.getItem('xionParticipants')||'{}');
+  const c=document.createElement('canvas');c.width=1400;c.height=1240;const ctx=c.getContext('2d');
+  ctx.fillStyle='#f1f8fb';ctx.fillRect(0,0,c.width,c.height);
+  const txt=(t,x,y,size=24,color='#14254b',weight='500')=>{ctx.fillStyle=color;ctx.font=`${weight} ${size}px "Noto Sans KR", "Malgun Gothic", sans-serif`;ctx.fillText(String(t),x,y);};
+  const box=(x,y,w,h)=>{ctx.fillStyle='#fff';ctx.beginPath();ctx.roundRect(x,y,w,h,20);ctx.fill();};
+  txt('XI:ON · RFID SESSION',65,78,24,'#0c9eaa','800');txt('교육생별 센서 누적 측정 보고서',65,139,40,'#14254b','800');
+  txt(`교육 ${d.session??'—'}회차   |   ${new Date().toLocaleString('ko-KR')}`,65,188,21,'#6885a5');
+  txt(`완료 교대 ${d.switchCount??0}회   ·   평균 교대시간 ${rawFmt(Number(d.avgSwitchGapMs)/1000,2)}초`,65,247,25,'#137b86','700');
+  ['A','B'].forEach((role,i)=>{const x=55+i*690,y=290,st=d[role]||{};box(x,y,660,680);txt(`${role==='A'?'ST1':'ST2'} · ${names[role]||role}`,x+25,y+54,29,'#14254b','800');
+    const vals=[['RFID UID',st.uid||'—'],['FSR 샘플',st.fsrSamples??0],['FSR1 평균 RAW',rawFmt(st.fsr1MeanRaw,1)],['FSR2 평균 RAW',rawFmt(st.fsr2MeanRaw,1)],['FSR1 최대 RAW',rawFmt(st.fsr1PeakRaw,0)],['FSR2 최대 RAW',rawFmt(st.fsr2PeakRaw,0)],['ToF 샘플',st.tofSamples??0],['ToF 평균 mm',rawFmt(st.tofMeanMm,1)],['ToF 최소 mm',st.tofSamples?rawFmt(st.tofMinMm,0):'—'],['ToF 최대 mm',st.tofSamples?rawFmt(st.tofMaxMm,0):'—']];
+    vals.forEach(([label,val],j)=>{txt(label,x+26,y+112+j*53,20,'#6684a5','600');txt(val,x+350,y+112+j*53,21,'#14254b','700');});});
+  box(55,996,1340,172);txt('교대 소요시간',80,1043,25,'#14254b','800');
+  const gaps=Array.isArray(d.switchGapsMs)?d.switchGapsMs:[];
+  txt(gaps.length?gaps.map((v,i)=>`${i+1}회: ${rawFmt(Number(v)/1000,2)}초`).join('    '):'완료된 교대 기록 없음',80,1096,21,'#147b83');
+  txt('※ FSR RAW와 ToF 거리(mm)는 보정된 CPR 압박 깊이(cm)·정확도·압박 횟수가 아닙니다.',65,1210,19,'#69849b');
+  c.toBlob(blob=>{if(!blob)return;const u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download=`XION_RFID_원시기록_${new Date().toISOString().slice(0,10)}.png`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),30000);},'image/png');
+}
+$('xionRawPNG').addEventListener('click',saveRawPNG);
 async function loadFromBLE(){
   if(!bleServer?.connected||!requestCharacteristic||!resultCharacteristic){showNotice('ESP32 연결 필요','먼저 ESP32에 연결해 주세요.');return;}
   if(pendingReceive)return;
@@ -145,7 +184,13 @@ async function loadFromBLE(){
     try{await requestCharacteristic.writeValueWithResponse(new TextEncoder().encode('GET'));}catch(e){if(pendingReceive){pendingReceive.reject(e);pendingReceive=null;}}
     const d=await received;
     if(d.version!==1||!('fsrSamples' in d)||!('tofSamples' in d))throw Error('ESP32 교육 결과 형식이 일치하지 않습니다.');
+    const fingerprint=JSON.stringify([d.session,d.durationMs,d.A,d.B,d.switchGapsMs]);
+    if(fingerprint!==savedRawSession){savedRawSession=fingerprint;savedRawRoles=new Set();}
     showSessionSummary(d);
+    if(savedRawRoles.size){
+      $('xionRawMessage').textContent='이 세션의 저장 완료 기록: '+[...savedRawRoles].map(r=>r==='A'?'ST1':'ST2').join(', ');
+      $('xionRawSaveBoth').disabled=!['A','B'].some(role=>(Number(d[role]?.fsrSamples)>0||Number(d[role]?.tofSamples)>0)&&!savedRawRoles.has(role));
+    }
     report('교육 종료 후 누적된 원시 측정 결과를 불러왔습니다. 아래 요약 표와 그래프를 확인하세요.');
   }catch(e){report('교육 결과 수신 실패: '+e.message,true);}finally{clearTimeout(timer);pendingReceive=null;button.disabled=false;}
 }

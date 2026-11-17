@@ -53,6 +53,15 @@
       </div>
     </dialog>
 
+    <section id="xionRawSession" class="panel xion-raw-panel" hidden aria-label="RFID별 실측 결과">
+      <div class="xion-raw-head"><div><span class="xion-eyebrow">XI:ON · RFID SESSION</span><h2>RFID별 실측 누적 데이터</h2></div><button id="xionRawPNG" class="action-btn secondary" type="button" disabled>RFID 결과 PNG 저장</button></div>
+      <p class="xion-raw-note">RFID 인식 시점부터 2분씩 측정합니다. 아래 값은 센서 RAW 통계이며 CPR 평가 점수가 아닙니다.</p>
+      <div id="xionRawSummary"></div>
+      <div id="xionRawStudents" class="xion-raw-grid"></div>
+      <div id="xionRawSwitches"></div>
+      <div class="xion-raw-actions"><button id="xionRawSaveBoth" class="action-btn primary" disabled>ST1·ST2 각 계정에 기록 저장</button></div>
+      <p id="xionRawMessage" class="history-message" role="status"></p>
+    </section>
     <nav class="xion-view-nav" aria-label="대시보드 화면 선택">
       <button type="button" id="xionOverviewTab" class="xion-view-tab active" aria-selected="true">교육 결과</button>
       <button type="button" id="xionCompareTab" class="xion-view-tab" aria-selected="false">회차별 통계 비교</button>
