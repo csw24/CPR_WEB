@@ -109,10 +109,11 @@ function showSessionSummary(d){
   latestRawSession=d;window.xionRawSession=d;
   const host=$('xionRawSession');host.hidden=false;
   const participants=JSON.parse(sessionStorage.getItem('xionParticipants')||'{}');
-  $('xionRawSummary').innerHTML=`<div class="xion-raw-summary"><span>교육 ${rawEsc(d.session??'—')}회차</span><span>전체 교육시간 ${rawFmt(Number(d.durationMs)/1000,1)}초</span><span>완료된 교대 ${rawEsc(d.switchCount??0)}회</span><span>평균 교대 소요 ${rawFmt(Number(d.avgSwitchGapMs)/1000,2)}초</span></div>`;
-  $('xionRawStudents').innerHTML=['A','B'].map((role)=>`<article class="xion-raw-student"><h3>${role==='A'?'ST1':'ST2'} · ${rawEsc(participants[role]||role)}</h3>${rawRows(d[role])}</article>`).join('');
+  $('xionRawSummary').textContent=`교육 ${d.session??'—'}회차 · 교대 ${d.switchCount??0}회 · 평균 교대시간 ${rawFmt(Number(d.avgSwitchGapMs)/1000,2)}초 · 아래 기존 6개 평가 카드에 실측 기반 시연 지표를 표시합니다 (의료 평가 아님).`;
+  $('xionRawStudents').replaceChildren();
   const gaps=Array.isArray(d.switchGapsMs)?d.switchGapsMs:[];
-  $('xionRawSwitches').innerHTML=`<h3>교대 소요시간</h3><p class="xion-raw-note">2분 종료 시점부터 다음 교육생 RFID 태깅까지의 시간</p>`+(gaps.length?`<div class="xion-gap-list">${gaps.map((ms,i)=>`<div><strong>${i+1}번째 교대</strong><span>${rawFmt(Number(ms)/1000,2)}초</span></div>`).join('')}</div>`:'<p class="xion-raw-note">완료된 2분 교대 기록이 없습니다.</p>');
+  $('xionRawSwitches').textContent=gaps.length?'교대 소요: '+gaps.map((ms,i)=>`${i+1}회 ${rawFmt(Number(ms)/1000,2)}초`).join(' · '):'2분 교대 기록 없음';
+  ['A','B'].forEach(role=>window.applyRawStudentPreview(role,d[role]));
   $('xionRawPNG').disabled=false;
   const available=['A','B'].filter(role=>Number(d[role]?.fsrSamples)>0||Number(d[role]?.tofSamples)>0);
   const saveBoth=$('xionRawSaveBoth');
@@ -191,7 +192,7 @@ async function loadFromBLE(){
       $('xionRawMessage').textContent='이 세션의 저장 완료 기록: '+[...savedRawRoles].map(r=>r==='A'?'ST1':'ST2').join(', ');
       $('xionRawSaveBoth').disabled=!['A','B'].some(role=>(Number(d[role]?.fsrSamples)>0||Number(d[role]?.tofSamples)>0)&&!savedRawRoles.has(role));
     }
-    report('교육 종료 후 누적된 원시 측정 결과를 불러왔습니다. 아래 요약 표와 그래프를 확인하세요.');
+    report('RFID별 누적값을 기존 평가 카드에 반영했습니다. 교육생 선택에서 ST1/ST2를 바꾸어 확인하세요. 표시된 %는 임시 시연 지표입니다.');
   }catch(e){report('교육 결과 수신 실패: '+e.message,true);}finally{clearTimeout(timer);pendingReceive=null;button.disabled=false;}
 }
 $('loadBle').addEventListener('click',loadFromBLE);

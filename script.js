@@ -46,6 +46,27 @@ function drawChart(values) {
 
 function render() {
   const d = students[select.value];
+  // BLE RAW display mode: explicitly labelled prototype indicators, not CPR accuracy.
+  if (d && d._rawPrototype) {
+    const raw=d._rawPrototype;
+    const n=Number(raw.fsrSamples)||0, m=Number(raw.tofSamples)||0;
+    const clamp=v=>Math.max(0,Math.min(100,Math.round(v)));
+    const f1=Number(raw.fsr1MeanRaw)||0, f2=Number(raw.fsr2MeanRaw)||0;
+    const range=m>0?Math.max(0,(Number(raw.tofMaxMm)||0)-(Number(raw.tofMinMm)||0)):0;
+    const values=[
+      ['압박 깊이 (시연 지표)',m?clamp(range/60*100):null,'%',`ToF 거리 변동폭 ${range.toFixed(0)} mm / 임시 60 mm 기준`],
+      ['압박 속도',null,'','압박 이벤트 검출 알고리즘 미구현'],
+      ['압박 위치 (시연 지표)',n?clamp((Math.min(f1,f2)/Math.max(1,Math.max(f1,f2)))*100):null,'%','FSR1·FSR2 평균 균형 기반 임시 지표'],
+      ['깊이 기준 (시연 지표)',m?clamp(range/60*100):null,'%','ToF 거리 변동폭 기반 임시 지표'],
+      ['완전 이완 (시연 지표)',m?clamp(100-Math.abs(range-40)/60*100):null,'%','ToF 변동폭 기반 임시 지표 (실제 이완율 아님)'],
+      ['인공호흡',null,'','SDP810 인공호흡 판정 미구현']
+    ];
+    const palette=['#087d79','#137bd1','#d53e68','#5745b1','#cc5a28','#137bd1'];
+    metrics.innerHTML=values.map(([label,v,unit,hint],i)=>`<article class="metric" style="--accent:${palette[i]};--bubble:#e4f7f3;--tint:#f1faf8"><div class="metric-icon">${['↕','◴','◎','▥','♧','♡'][i]}</div><span>${label}</span><strong>${v===null?'—':v} <small>${unit}</small></strong><em>${hint}</em></article>`).join('');
+    feedback.innerHTML='<div class="empty-feedback"><strong>실측 기반 임시 시연 지표</strong><p>RFID별 실제 센서값으로 계산한 테스트용 백분율입니다. 의료적으로 검증된 CPR 정확도·깊이·이완율이 아닙니다. 압박 속도와 인공호흡은 아직 산출할 수 없습니다.</p></div>';
+    drawChart([]);
+    return;
+  }
   const avg = d ? d.depth.reduce((a,b)=>a+b,0)/d.depth.length : null;
   const good = d ? d.depth.filter(v=>v>=5&&v<=6).length/d.depth.length*100 : null;
   const items = [
@@ -109,7 +130,7 @@ window.applyCPRResults = function (incoming) {
   render();
   window.dispatchEvent(new CustomEvent('cprresultsupdated'));
 };
-window.getCPRResults = () => JSON.parse(JSON.stringify(students));
+window.getCPRResults = () => JSON.parse(JSON.stringify({A:students.A?._rawPrototype?null:students.A,B:students.B?._rawPrototype?null:students.B}));
 
 // 선택된 교육생의 표시 데이터를 지워 다른 교육생 기록이 남지 않도록 합니다.
 window.clearCPRResult = function(role) {
@@ -117,4 +138,16 @@ window.clearCPRResult = function(role) {
   students[role] = null;
   render();
   window.dispatchEvent(new CustomEvent('cprresultsupdated'));
+};
+
+// Only show the scanned student's raw BLE data in the existing metric cards.
+window.applyRawStudentPreview=function(role,stats){
+  if(!['A','B'].includes(role))return;
+  if(!stats||!(Number(stats.fsrSamples)>0||Number(stats.tofSamples)>0)){
+    students[role]=null;
+  }else{
+    students[role]={_rawPrototype:stats};
+  }
+  if(select.value===role)render();
+  window.dispatchEvent(new CustomEvent('xionrawpreviewupdated'));
 };
