@@ -13,8 +13,15 @@ service cloud.firestore {
         && request.resource.data.nickname.size() <= 20
         && key == request.resource.data.nickname.lower()
         && request.resource.data.createdAt == request.time
-        && !exists(/databases/$(database)/documents/users/$(request.auth.uid));
-      allow update, delete: if false;
+        && getAfter(/databases/$(database)/documents/users/$(request.auth.uid)).data.nicknameKey == key;
+      allow update: if signedIn() && resource.data.uid == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['nickname'])
+        && request.resource.data.nickname is string
+        && request.resource.data.nickname.size() >= 2
+        && request.resource.data.nickname.size() <= 20
+        && request.resource.data.nickname.lower() == key;
+      allow delete: if signedIn() && resource.data.uid == request.auth.uid
+        && getAfter(/databases/$(database)/documents/users/$(request.auth.uid)).data.nicknameKey != key;
     }
     match /users/{uid} {
       allow get: if signedIn() && request.auth.uid == uid;
@@ -25,7 +32,14 @@ service cloud.firestore {
         && request.resource.data.nicknameKey == request.resource.data.nickname.lower()
         && request.resource.data.createdAt == request.time
         && getAfter(/databases/$(database)/documents/nicknames/$(request.resource.data.nicknameKey)).data.uid == uid;
-      allow update, delete: if false;
+      allow update: if signedIn() && request.auth.uid == uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['nickname','nicknameKey'])
+        && request.resource.data.nickname is string
+        && request.resource.data.nickname.size() >= 2
+        && request.resource.data.nickname.size() <= 20
+        && request.resource.data.nicknameKey == request.resource.data.nickname.lower()
+        && getAfter(/databases/$(database)/documents/nicknames/$(request.resource.data.nicknameKey)).data.uid == uid;
+      allow delete: if false;
     }
     match /records/{id} {
       allow get, list: if signedIn() && (resource.data.recipientUid == request.auth.uid || resource.data.ownerUid == request.auth.uid);
@@ -34,7 +48,7 @@ service cloud.firestore {
         && request.resource.data.ownerUid == request.auth.uid
         && request.resource.data.recipientUid is string
         && request.resource.data.role in ['A','B']
-        && request.resource.data.source in ['demo','ble','ble_raw']
+        && request.resource.data.source in ['ble','ble_raw']
         && request.resource.data.data is map
         && request.resource.data.createdAt == request.time
         && request.resource.data.nickname is string

@@ -1,6 +1,6 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
-import { getFirestore, doc, getDoc, getDocs, collection, query, where, runTransaction, addDoc, updateDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
+import { getFirestore, doc, getDoc, getDocs, collection, query, where, runTransaction, addDoc, updateDoc, deleteDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 const firebaseConfig = {apiKey:'AIzaSyBD_kagvg3I5L18Y66iFs0gdLfpnM32g8A',authDomain:'xion-cpr.firebaseapp.com',projectId:'xion-cpr',storageBucket:'xion-cpr.firebasestorage.app',messagingSenderId:'603440747615',appId:'1:603440747615:web:70ab3d67eb1ba1051877ea',measurementId:'G-ZNN4MGMDH4'};
 const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getFirestore(app);
 const nickKey=s=>s.trim().toLowerCase();
@@ -10,8 +10,32 @@ const ready=new Promise(resolve=>onAuthStateChanged(auth,async u=>{user=u;profil
 async function login(){await signInWithPopup(auth,new GoogleAuthProvider());await ready;return auth.currentUser;}
 async function logout(){await signOut(auth);user=null;profile=null;sessionStorage.removeItem('xionParticipants');location.href='index.html';}
 async function register(nickname){await ready;const u=auth.currentUser;if(!u)throw Error('먼저 Google 로그인해 주세요.');nickname=nickname.trim();if(!validNick(nickname))throw Error('닉네임은 한글·영문·숫자·_·-로 2~20자 입력해 주세요.');const key=nickKey(nickname);await runTransaction(db,async tx=>{const nr=doc(db,'nicknames',key),ur=doc(db,'users',u.uid);const [n,p]=await Promise.all([tx.get(nr),tx.get(ur)]);if(p.exists())throw Error('이미 닉네임을 등록한 계정입니다.');if(n.exists())throw Error('이미 사용 중인 닉네임입니다.');tx.set(nr,{uid:u.uid,nickname,createdAt:serverTimestamp()});tx.set(ur,{nickname,nicknameKey:key,createdAt:serverTimestamp()});});profile={nickname,nicknameKey:key};return profile;}
+
+async function changeNickname(nickname){
+  await ready;
+  const u=auth.currentUser;
+  if(!u||!profile)throw Error('로그인이 필요합니다.');
+  nickname=nickname.trim();
+  if(!validNick(nickname))throw Error('닉네임은 한글·영문·숫자·_·-로 2~20자 입력해 주세요.');
+  const newKey=nickKey(nickname),oldKey=profile.nicknameKey;
+  if(newKey===oldKey && nickname===profile.nickname)return profile;
+  await runTransaction(db,async tx=>{
+    const ur=doc(db,'users',u.uid),nr=doc(db,'nicknames',newKey),or=doc(db,'nicknames',oldKey);
+    const [userSnap,newSnap,oldSnap]=await Promise.all([tx.get(ur),tx.get(nr),tx.get(or)]);
+    if(!userSnap.exists()||!oldSnap.exists()||oldSnap.data().uid!==u.uid)throw Error('기존 닉네임 정보를 확인할 수 없습니다.');
+    if(newSnap.exists() && newSnap.data().uid!==u.uid)throw Error('이미 사용 중인 닉네임입니다.');
+    if(newKey!==oldKey){
+      tx.set(nr,{uid:u.uid,nickname,createdAt:serverTimestamp()});
+      tx.delete(or);
+    }else tx.update(or,{nickname});
+    tx.update(ur,{nickname,nicknameKey:newKey});
+  });
+  profile={...profile,nickname,nicknameKey:newKey};
+  window.dispatchEvent(new Event('xionauthchanged'));
+  return profile;
+}
 async function findNickname(nickname){await ready;const key=nickKey(nickname);if(!validNick(nickname))return null;const n=await getDoc(doc(db,'nicknames',key));return n.exists()?{uid:n.data().uid,nickname:n.data().nickname}:null;}
 async function saveResult(role,data,source,participants){await ready;const u=auth.currentUser;if(!u)throw Error('로그인이 필요합니다.');const recipientUid=role==='A'?u.uid:participants.Buid;if(!recipientUid)throw Error('ST2 계정 정보를 찾지 못했습니다.');const ref=await addDoc(collection(db,'records'),{ownerUid:u.uid,recipientUid,role,nickname:role==='A'?participants.A:participants.B,source,data,createdAt:serverTimestamp(),status:role==='A'?'claimed':'pending'});return ref.id;}
 async function myRecords(){await ready;const u=auth.currentUser;if(!u)return [];const snap=await getDocs(query(collection(db,'records'),where('recipientUid','==',u.uid)));return snap.docs.map(d=>({id:d.id,...d.data(),createdAt:d.data().createdAt?.toDate?.().toISOString()||new Date().toISOString()})).sort((a,b)=>b.createdAt.localeCompare(a.createdAt));}
 async function decide(id,decision){await ready;if(!['claimed','rejected'].includes(decision))throw Error('잘못된 선택입니다.');const ref=doc(db,'records',id);await runTransaction(db,async tx=>{const snap=await tx.get(ref);if(!snap.exists()||snap.data().recipientUid!==auth.currentUser?.uid||snap.data().status!=='pending')throw Error('수령 대기 기록이 아니거나 접근 권한이 없습니다.');tx.update(ref,{status:decision});});}
-window.XION={ready,login,logout,register,findNickname,saveResult,myRecords,decide,get user(){return auth.currentUser;},get profile(){return profile;}};
+window.XION={ready,login,logout,register,changeNickname,findNickname,saveResult,myRecords,decide,get user(){return auth.currentUser;},get profile(){return profile;}};

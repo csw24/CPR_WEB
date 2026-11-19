@@ -13,7 +13,7 @@ function deltaText(k,a,b,d){if(!valid(a)||!valid(b))return '<span class="xion-mu
 function renderPair(){const a=state.shown.find(r=>r.id===$c('xionRoundA')?.value),b=state.shown.find(r=>r.id===$c('xionRoundB')?.value),target=$c('xionPairResult');if(!a||!b){target.textContent='비교할 기록을 선택해 주세요.';return;}if(a.id===b.id){target.textContent='서로 다른 두 회차를 선택해 주세요.';return;}const x=metrics(a),y=metrics(b);target.innerHTML=`<div style="overflow-x:auto"><table class="xion-delta-table"><thead><tr><th>평가 지표</th><th>선택 회차 A</th><th>선택 회차 B</th><th>변화량 (B−A)</th></tr></thead><tbody>${items.map(([k,label,unit,d])=>`<tr><th>${label}</th><td>${fmt(x[k],d)} ${unit}</td><td>${fmt(y[k],d)} ${unit}</td><td>${deltaText(k,x[k],y[k],d)}</td></tr>`).join('')}</tbody></table></div><p class="xion-compare-note">깊이는 5~6 cm 범위에 가까운 쪽, 속도는 100~120회/분 범위에 가까운 쪽을 긍정적인 변화로 표시합니다. 인공호흡 횟수는 단순 증가만으로 개선 여부를 판단하지 않습니다.</p>`;}
 function render(){
   const source=$c('xionCompareSource').value, user=window.XION?.user;
-  const all=state.records.filter(r=>user?.uid&&r.status==='claimed'&&r.recipientUid===user.uid&&(source==='all'||r.source===source)&&r.data&&Array.isArray(r.data.depth)).sort((a,b)=>String(a.createdAt||'').localeCompare(String(b.createdAt||'')));
+  const all=state.records.filter(r=>user?.uid&&r.status==='claimed'&&r.recipientUid===user.uid&&(r.source==='ble'||r.source==='ble_raw')&&r.data&&Array.isArray(r.data.depth)).sort((a,b)=>String(a.createdAt||'').localeCompare(String(b.createdAt||'')));
   const rows=all.slice(-5); // 최근 5회만 비교, 5회 미만이면 전부
   state.shown=rows;
   const body=$c('xionCompareBody'),count=all.length;
@@ -24,9 +24,9 @@ function render(){
   const m=rows.map(metrics),first=m[0],last=m[m.length-1];
   const avg=key=>{const arr=m.map(x=>x[key]).filter(valid);return arr.length?arr.reduce((a,b)=>a+b,0)/arr.length:NaN;};
   const diff=valid(first.pass)&&valid(last.pass)?last.pass-first.pass:NaN;
-  body.innerHTML=`<div class="xion-stat-grid"><div class="xion-stat-card"><span>누적 교육 기록</span><strong>${count}<small> 회</small></strong><small>최근 ${rows.length}회 분석</small></div><div class="xion-stat-card"><span>평균 압박 깊이</span><strong>${fmt(avg('depth'),2)}<small> cm</small></strong><small>최근 ${rows.length}회 평균</small></div><div class="xion-stat-card"><span>평균 깊이 충족률</span><strong>${fmt(avg('pass'))}<small> %</small></strong><small>최근 ${rows.length}회 평균</small></div><div class="xion-stat-card"><span>최근 비교 구간 변화</span><strong>${valid(diff)?(diff>0?'+':'')+fmt(diff):'—'}<small> %p</small></strong><small>최근 ${rows.length}회 첫 기록 → 마지막 기록</small></div></div><p class="xion-compare-note">최근 기록 ${rows.length}회만 그래프와 상세 비교에 표시합니다. (전체 보유 ${count}회)</p><div class="xion-trend-grid">${renderTrend(rows,'pass','깊이 5~6 cm 충족률 (%)','#0c9eaa')}${renderTrend(rows,'depth','평균 압박 깊이 (cm)','#147bd0')}${renderTrend(rows,'rate','압박 속도 (회/분)','#d17a33')}</div><div class="xion-compare-panel"><h3>두 회차 상세 비교</h3><p class="xion-compare-sub">최근 ${rows.length}회 중 비교할 두 기록을 선택하세요.</p><div class="xion-pair-select"><label>기준 회차 A<select id="xionRoundA"></select></label><label>비교 회차 B<select id="xionRoundB"></select></label></div><div id="xionPairResult"></div></div><p class="xion-compare-note">※ 가상 데이터는 시연용입니다. 전체 보기에서 BLE 기록과 가상 기록을 함께 표시할 수 있으나, 개선 정도를 해석할 때는 같은 유형끼리 비교하세요. 지표는 교육용 참고 수치이며 의료적 판정이 아닙니다.</p>`;
+  body.innerHTML=`<div class="xion-stat-grid"><div class="xion-stat-card"><span>누적 교육 기록</span><strong>${count}<small> 회</small></strong><small>최근 ${rows.length}회 분석</small></div><div class="xion-stat-card"><span>평균 압박 깊이</span><strong>${fmt(avg('depth'),2)}<small> cm</small></strong><small>최근 ${rows.length}회 평균</small></div><div class="xion-stat-card"><span>평균 깊이 충족률</span><strong>${fmt(avg('pass'))}<small> %</small></strong><small>최근 ${rows.length}회 평균</small></div><div class="xion-stat-card"><span>최근 비교 구간 변화</span><strong>${valid(diff)?(diff>0?'+':'')+fmt(diff):'—'}<small> %p</small></strong><small>최근 ${rows.length}회 첫 기록 → 마지막 기록</small></div></div><p class="xion-compare-note">최근 기록 ${rows.length}회만 그래프와 상세 비교에 표시합니다. (전체 보유 ${count}회)</p><div class="xion-trend-grid">${renderTrend(rows,'pass','깊이 5~6 cm 충족률 (%)','#0c9eaa')}${renderTrend(rows,'depth','평균 압박 깊이 (cm)','#147bd0')}${renderTrend(rows,'rate','압박 속도 (회/분)','#d17a33')}</div><div class="xion-compare-panel"><h3>두 회차 상세 비교</h3><p class="xion-compare-sub">최근 ${rows.length}회 중 비교할 두 기록을 선택하세요.</p><div class="xion-pair-select"><label>기준 회차 A<select id="xionRoundA"></select></label><label>비교 회차 B<select id="xionRoundB"></select></label></div><div id="xionPairResult"></div></div><p class="xion-compare-note">※ 실제 BLE 측정 기반 교육용 참고 수치이며 의료적 판정이 아닙니다.</p>`;
   for(const [id,choice] of [['xionRoundA',0],['xionRoundB',rows.length-1]]){
-    const select=$c(id);rows.forEach((r,i)=>{const opt=document.createElement('option');opt.value=r.id;opt.textContent=`${count-rows.length+i+1}회차 · ${when(r)} · ${r.source==='demo'?'가상':'BLE'}`;select.append(opt);});select.value=rows[choice].id;select.onchange=renderPair;
+    const select=$c(id);rows.forEach((r,i)=>{const opt=document.createElement('option');opt.value=r.id;opt.textContent=`${count-rows.length+i+1}회차 · ${when(r)} · ${'BLE'}`;select.append(opt);});select.value=rows[choice].id;select.onchange=renderPair;
   }
   renderPair();
 }
@@ -55,7 +55,7 @@ async function exportComparisonPNG(){
   text(`${nickname}  |  ${new Date().toLocaleString('ko-KR')}  |  ${$c('xionCompareSource').selectedOptions[0].text}`,70,175,17,'#526f87');
   const m=records.map(metrics),avg=k=>{const v=m.map(x=>x[k]).filter(valid);return v.length?v.reduce((x,y)=>x+y,0)/v.length:NaN;};
   const diff=m.length>1?m[m.length-1].pass-m[0].pass:NaN;
-  const cards=[['누적 교육 기록',`${state.records.filter(r=>r.status==='claimed'&&r.recipientUid===uid&&( $c('xionCompareSource').value==='all'||r.source===$c('xionCompareSource').value)&&r.data&&Array.isArray(r.data.depth)).length}회`],['평균 압박 깊이',`${fmt(avg('depth'),2)} cm`],['평균 깊이 충족률',`${fmt(avg('pass'),1)} %`],['최근 비교 구간 변화',`${valid(diff)?(diff>0?'+':'')+fmt(diff,1)+' %p':'—'}`]];
+  const cards=[['누적 교육 기록',`${state.records.filter(r=>r.status==='claimed'&&r.recipientUid===uid&&(r.source==='ble'||r.source==='ble_raw')&&r.data&&Array.isArray(r.data.depth)).length}회`],['평균 압박 깊이',`${fmt(avg('depth'),2)} cm`],['평균 깊이 충족률',`${fmt(avg('pass'),1)} %`],['최근 비교 구간 변화',`${valid(diff)?(diff>0?'+':'')+fmt(diff,1)+' %p':'—'}`]];
   cards.forEach(([label,val],i)=>{const x=35+i*286;box(x,215,272,130);text(label,x+17,253,17,'#58748b','600');text(val,x+17,309,29,'#087e89','800');});
   // PNG도 화면과 동일하게 최근 최대 5회의 그래프 세 개를 가로 한 줄에 배치합니다.
   function trend(key,title,color,index){
@@ -84,7 +84,7 @@ async function exportComparisonPNG(){
     text('평가 지표',65,820,17,'#526f87','700');text('A 회차',530,820,17,'#526f87','700');text('B 회차',745,820,17,'#526f87','700');text('변화량 (B-A)',940,820,17,'#526f87','700');
     items.forEach(([k,label,unit,d],i)=>{const y=860+i*35;if(i%2===0){ctx.fillStyle='#f3f8fa';ctx.fillRect(58,y-25,1090,34);}text(label,65,y,17);text(`${fmt(ma[k],d)} ${unit}`,530,y,17);text(`${fmt(mb[k],d)} ${unit}`,745,y,17);const diff=mb[k]-ma[k];text(valid(diff)?`${diff>0?'+':''}${fmt(diff,d)} ${k==='depth'?'cm':k==='rate'?'회/분':k==='breaths'?'회':'%p'}`:'—',940,y,17);});
   }else{text('서로 다른 두 회차를 선택하면 상세 비교가 표시됩니다.',65,820,19,'#66849b');}
-  text('※ 본인 계정의 수령 완료 기록만 포함 · 가상 데이터는 시연용 · 의료적 판정 아님',48,1150,17,'#718da3');
+  text('※ 본인 계정의 실제 BLE 수령 완료 기록만 포함 · 의료적 판정 아님',48,1150,17,'#718da3');
   text('XI:ON  ·  CPR Training Analytics',48,1190,18,'#718da3','700');
   const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));
   if(!blob){alert('PNG 생성에 실패했습니다.');return;}
