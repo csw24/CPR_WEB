@@ -8,18 +8,18 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     * { box-sizing:border-box; }
-    body { margin:0; min-height:100vh; display:grid; place-items:center; padding:24px; background:radial-gradient(ellipse at 20% 0%,#fafdff,#eaf3fc 72%); font-family:'DM Sans','Noto Sans KR',sans-serif; color:#14254b; }
-    .card { width:min(100%,480px); padding:42px 36px; background:white; border:1px solid #e1f0f7; border-radius:28px; box-shadow:0 15px 40px #466b9620; }
+    body { margin:0; min-height:100vh; display:grid; place-items:center; padding:24px; background:radial-gradient(ellipse at 20% 0%,#FFFFFF,#FFF5F5 72%); font-family:'DM Sans','Noto Sans KR',sans-serif; color:#4B1714; }
+    .card { width:min(100%,480px); padding:42px 36px; background:white; border:1px solid #FFD0D8; border-radius:28px; box-shadow:0 15px 40px #964B4620; }
     .logo { display:flex; align-items:center; justify-content:center; gap:12px; margin-bottom:14px; }
-    .heart { width:56px; height:56px; display:grid; place-items:center; border-radius:15px; color:white; background:linear-gradient(135deg,#64dfd3,#0ba9b8); font-size:34px; }
+    .heart { width:56px; height:56px; display:grid; place-items:center; border-radius:15px; color:white; background:linear-gradient(135deg,#FF7F6E,#FF4D4F); font-size:34px; }
     h1 { margin:0; font-size:36px; letter-spacing:-1px; }
-    .subtitle { text-align:center; color:#6684a5; margin:0 0 30px; }
-    label { display:block; margin:18px 0 8px; color:#126e7c; font-weight:800; }
+    .subtitle { text-align:center; color:#A56A66; margin:0 0 30px; }
+    label { display:block; margin:18px 0 8px; color:#8B1E1E; font-weight:800; }
     input { display:block; width:100%; padding:14px 15px; font:600 16px 'Noto Sans KR',sans-serif; border:1px solid #cbdbe9; border-radius:11px; outline-offset:2px; }
-    input:focus { outline:2px solid #0c9eaa; }
-    button { width:100%; margin-top:26px; padding:15px; border:0; border-radius:12px; background:#0c9eaa; color:white; font:800 16px 'Noto Sans KR',sans-serif; cursor:pointer; }
-    button:hover { background:#087d89; }
-    .help { text-align:center; margin:16px 0 0; font-size:12px; line-height:1.7; color:#6684a5; }
+    input:focus { outline:2px solid #FF4D4F; }
+    button { width:100%; margin-top:26px; padding:15px; border:0; border-radius:12px; background:#FF4D4F; color:white; font:800 16px 'Noto Sans KR',sans-serif; cursor:pointer; }
+    button:hover { background:#891008; }
+    .help { text-align:center; margin:16px 0 0; font-size:12px; line-height:1.7; color:#A56A66; }
     .error { color:#b54735; min-height:20px; font-size:13px; margin-top:12px; text-align:center; }
     @media(max-width:500px){ .card {padding:30px 22px;} }
   </style>
@@ -34,8 +34,8 @@
       <label>ST1 교육생 (로그인 계정)</label><input id="st1" readonly>
       <label for="st2">ST2 교육생 닉네임</label><input id="st2" placeholder="예: 아이언맨" maxlength="20" required>
       <button type="submit">클래스 입장하기</button>
-      <button type="button" id="editNickname" style="margin-top:10px;background:#1973a9">내 닉네임 수정</button>
-      <button type="button" id="logout" style="margin-top:10px;background:#6684a5">로그아웃</button>
+      <button type="button" id="editNickname" style="margin-top:10px;background:#A92219">내 닉네임 수정</button>
+      <button type="button" id="logout" style="margin-top:10px;background:#A56A66">로그아웃</button>
     </form>
     <p class="error" id="error" role="alert"></p>
     <section id="pendingArea" hidden style="margin-top:22px;border-top:1px solid #dceaf1;padding-top:18px"><strong>내 기록 수령 대기</strong><div id="pendingList" style="margin-top:10px"></div></section>
@@ -46,7 +46,7 @@
     const showError=e=>{error.textContent=e?.message||String(e)};
     async function refresh(){await window.XION.ready;const x=window.XION;$('authArea').hidden=!!x.user;$('nicknameForm').hidden=!x.user||!!x.profile;$('entryForm').hidden=!x.user||!x.profile;if(x.profile){$('st1').value=x.profile.nickname;await showPending();}}
     window.addEventListener('xionauthchanged',refresh);window.addEventListener('load',refresh);
-    async function showPending(){const area=$('pendingArea'),list=$('pendingList');try{const all=await window.XION.myRecords(),pending=all.filter(r=>r.status==='pending');area.hidden=!pending.length;list.replaceChildren();for(const r of pending){const box=document.createElement('div');box.style='padding:12px 0;border-bottom:1px solid #e2ebf1';const t=document.createElement('div');t.textContent=`${r.nickname} · ${new Date(r.createdAt).toLocaleString('ko-KR')} · ST2 · ${r.source==='ble_raw'?'RFID 원시 측정':'BLE 결과'}`;const yes=document.createElement('button'),no=document.createElement('button');yes.textContent='내 기록으로 가져오기';no.textContent='거절하기';yes.style='margin-top:10px';no.style='margin-top:7px;background:#6684a5';for(const [b,choice] of [[yes,'claimed'],[no,'rejected']])b.onclick=async()=>{yes.disabled=no.disabled=true;try{await window.XION.decide(r.id,choice);await showPending();}catch(e){showError(e);yes.disabled=no.disabled=false;}};box.append(t,yes,no);list.append(box);}}catch(e){showError(e);}}
+    async function showPending(){const area=$('pendingArea'),list=$('pendingList');try{const all=await window.XION.myRecords(),pending=all.filter(r=>r.status==='pending');area.hidden=!pending.length;list.replaceChildren();for(const r of pending){const box=document.createElement('div');box.style='padding:12px 0;border-bottom:1px solid #e2ebf1';const t=document.createElement('div');t.textContent=`${r.nickname} · ${new Date(r.createdAt).toLocaleString('ko-KR')} · ST2 · ${r.source==='ble_raw'?'RFID 원시 측정':'BLE 결과'}`;const yes=document.createElement('button'),no=document.createElement('button');yes.textContent='내 기록으로 가져오기';no.textContent='거절하기';yes.style='margin-top:10px';no.style='margin-top:7px;background:#A56A66';for(const [b,choice] of [[yes,'claimed'],[no,'rejected']])b.onclick=async()=>{yes.disabled=no.disabled=true;try{await window.XION.decide(r.id,choice);await showPending();}catch(e){showError(e);yes.disabled=no.disabled=false;}};box.append(t,yes,no);list.append(box);}}catch(e){showError(e);}}
     $('googleLogin').onclick=async()=>{try{error.textContent='';await window.XION.login();await refresh();}catch(e){showError(e)}};
     $('nicknameForm').onsubmit=async e=>{e.preventDefault();try{error.textContent='';await window.XION.register($('myNickname').value);await refresh();}catch(err){showError(err)}};
     $('editNickname').onclick=async()=>{const old=window.XION.profile?.nickname||'';const next=prompt('새 닉네임을 입력해 주세요 (2~20자)',old);if(next===null)return;try{error.textContent='';await window.XION.changeNickname(next);await refresh();alert('닉네임이 변경되었습니다.');}catch(err){showError(err)}};

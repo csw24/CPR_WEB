@@ -159,18 +159,18 @@ function saveRawPNG(){
   const names=JSON.parse(sessionStorage.getItem('xionParticipants')||'{}');
   const c=document.createElement('canvas');c.width=1400;c.height=1240;const ctx=c.getContext('2d');
   ctx.fillStyle='#f1f8fb';ctx.fillRect(0,0,c.width,c.height);
-  const txt=(t,x,y,size=24,color='#14254b',weight='500')=>{ctx.fillStyle=color;ctx.font=`${weight} ${size}px "Noto Sans KR", "Malgun Gothic", sans-serif`;ctx.fillText(String(t),x,y);};
+  const txt=(t,x,y,size=24,color='#4B1714',weight='500')=>{ctx.fillStyle=color;ctx.font=`${weight} ${size}px "Noto Sans KR", "Malgun Gothic", sans-serif`;ctx.fillText(String(t),x,y);};
   const box=(x,y,w,h)=>{ctx.fillStyle='#fff';ctx.beginPath();ctx.roundRect(x,y,w,h,20);ctx.fill();};
-  txt('XI:ON · RFID SESSION',65,78,24,'#0c9eaa','800');txt('교육생별 센서 누적 측정 보고서',65,139,40,'#14254b','800');
-  txt(`교육 ${d.session??'—'}회차   |   ${new Date().toLocaleString('ko-KR')}`,65,188,21,'#6885a5');
-  txt(`완료 교대 ${d.switchCount??0}회   ·   평균 교대시간 ${rawFmt(Number(d.avgSwitchGapMs)/1000,2)}초`,65,247,25,'#137b86','700');
-  ['A','B'].forEach((role,i)=>{const x=55+i*690,y=290,st=d[role]||{};box(x,y,660,680);txt(`${role==='A'?'ST1':'ST2'} · ${names[role]||role}`,x+25,y+54,29,'#14254b','800');
+  txt('XI:ON · RFID SESSION',65,78,24,'#FF4D4F','800');txt('교육생별 센서 누적 측정 보고서',65,139,40,'#4B1714','800');
+  txt(`교육 ${d.session??'—'}회차   |   ${new Date().toLocaleString('ko-KR')}`,65,188,21,'#A56C68');
+  txt(`완료 교대 ${d.switchCount??0}회   ·   평균 교대시간 ${rawFmt(Number(d.avgSwitchGapMs)/1000,2)}초`,65,247,25,'#861A13','700');
+  ['A','B'].forEach((role,i)=>{const x=55+i*690,y=290,st=d[role]||{};box(x,y,660,680);txt(`${role==='A'?'ST1':'ST2'} · ${names[role]||role}`,x+25,y+54,29,'#4B1714','800');
     const vals=[['RFID UID',st.uid||'—'],['FSR 샘플',st.fsrSamples??0],['FSR1 평균 RAW',rawFmt(st.fsr1MeanRaw,1)],['FSR2 평균 RAW',rawFmt(st.fsr2MeanRaw,1)],['FSR1 최대 RAW',rawFmt(st.fsr1PeakRaw,0)],['FSR2 최대 RAW',rawFmt(st.fsr2PeakRaw,0)],['ToF 샘플',st.tofSamples??0],['ToF 평균 mm',rawFmt(st.tofMeanMm,1)],['ToF 최소 mm',st.tofSamples?rawFmt(st.tofMinMm,0):'—'],['ToF 최대 mm',st.tofSamples?rawFmt(st.tofMaxMm,0):'—']];
-    vals.forEach(([label,val],j)=>{txt(label,x+26,y+112+j*53,20,'#6684a5','600');txt(val,x+350,y+112+j*53,21,'#14254b','700');});});
-  box(55,996,1340,172);txt('교대 소요시간',80,1043,25,'#14254b','800');
+    vals.forEach(([label,val],j)=>{txt(label,x+26,y+112+j*53,20,'#A56A66','600');txt(val,x+350,y+112+j*53,21,'#4B1714','700');});});
+  box(55,996,1340,172);txt('교대 소요시간',80,1043,25,'#4B1714','800');
   const gaps=Array.isArray(d.switchGapsMs)?d.switchGapsMs:[];
-  txt(gaps.length?gaps.map((v,i)=>`${i+1}회: ${rawFmt(Number(v)/1000,2)}초`).join('    '):'완료된 교대 기록 없음',80,1096,21,'#147b83');
-  txt('※ 압박 깊이는 ToF 기준값으로부터 계산된 센서 추정치이며, 의료적 판정 기준이 아닙니다.',65,1210,19,'#69849b');
+  txt(gaps.length?gaps.map((v,i)=>`${i+1}회: ${rawFmt(Number(v)/1000,2)}초`).join('    '):'완료된 교대 기록 없음',80,1096,21,'#C7001E');
+  txt('※ 압박 깊이는 ToF 기준값으로부터 계산된 센서 추정치이며, 의료적 판정 기준이 아닙니다.',65,1210,19,'#9B6C69');
   c.toBlob(blob=>{if(!blob)return;const u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download=`XION_RFID_원시기록_${new Date().toISOString().slice(0,10)}.png`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),30000);},'image/png');
 }
 $('xionRawPNG').addEventListener('click',saveRawPNG);
@@ -222,15 +222,15 @@ function exportReport() {
   const rounded = (x,y,w,h,r,fill) => {
     ctx.beginPath(); ctx.roundRect(x,y,w,h,r); ctx.fillStyle=fill; ctx.fill();
   };
-  const label = (txt,x,y,size=22,color='#14254b',weight='500') => {
+  const label = (txt,x,y,size=22,color='#4B1714',weight='500') => {
     ctx.fillStyle=color; ctx.font=`${weight} ${size}px "Noto Sans KR", "Malgun Gothic", sans-serif`;
     ctx.fillText(String(txt),x,y);
   };
   ctx.fillStyle='#f0f7fb'; ctx.fillRect(0,0,W,H);
   rounded(42,40,1116,176,25,'#e1f4f7');
-  label('XI:ON  ·  CPR TRAINING',76,91,21,'#0b9eaa','700');
-  label('CPR Training Analytics',76,147,40,'#14254b','800');
-  label(`${nickname}  |  ${reportDate}  |  교육 결과 보고서`,77,185,20,'#52758f','600');
+  label('XI:ON  ·  CPR TRAINING',76,91,21,'#AA150B','700');
+  label('CPR Training Analytics',76,147,40,'#4B1714','800');
+  label(`${nickname}  |  ${reportDate}  |  교육 결과 보고서`,77,185,20,'#8F5652','600');
   const avg = d.depth.reduce((a,b)=>a+b,0)/d.depth.length;
   const good = d.depth.filter(v=>v>=5&&v<=6).length/d.depth.length*100;
   const cards = [
@@ -241,26 +241,26 @@ function exportReport() {
   cards.forEach(([title,val],i)=>{
     const x=42+(i%3)*380, y=242+Math.floor(i/3)*137;
     rounded(x,y,356,118,17,'#ffffff');
-    label(title,x+22,y+35,19,'#58748f','600');
-    label(val,x+22,y+86,34,'#127d99','800');
+    label(title,x+22,y+35,19,'#8F5B58','600');
+    label(val,x+22,y+86,34,'#991A12','800');
   });
   rounded(42,539,1116,425,20,'#ffffff');
-  label('압박 깊이 변화 그래프',72,590,26,'#14254b','700');
-  label('권장 범위 5–6 cm',880,588,18,'#4d7285');
+  label('압박 깊이 변화 그래프',72,590,26,'#4B1714','700');
+  label('권장 범위 5–6 cm',880,588,18,'#85504D');
   const px=100, py=640, pw=990, ph=258, low=4, high=6.5;
   const y=v=>py+ph-(v-low)/(high-low)*ph;
   const x=i=>px+i*pw/Math.max(1,d.depth.length-1);
   ctx.fillStyle='#dff7f1';ctx.fillRect(px,y(6),pw,y(5)-y(6));
   for(let v=4;v<=6.5;v+=.5){
-    ctx.strokeStyle='#e1ebf3';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(px,y(v));ctx.lineTo(px+pw,y(v));ctx.stroke();
-    label(v.toFixed(1),58,y(v)+7,16,'#6684a5');
+    ctx.strokeStyle='#FFE4EC';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(px,y(v));ctx.lineTo(px+pw,y(v));ctx.stroke();
+    label(v.toFixed(1),58,y(v)+7,16,'#A56A66');
   }
-  ctx.beginPath(); ctx.lineWidth=3; ctx.strokeStyle='#147bd0';
+  ctx.beginPath(); ctx.lineWidth=3; ctx.strokeStyle='#FF6B6B';
   d.depth.forEach((v,i)=>i?ctx.lineTo(x(i),y(v)):ctx.moveTo(x(i),y(v)));ctx.stroke();
-  if(d.depth.length<=80) d.depth.forEach((v,i)=>{ctx.beginPath();ctx.arc(x(i),y(v),4,0,Math.PI*2);ctx.fillStyle='#147bd0';ctx.fill();});
-  label(`압박 측정 횟수: ${d.depth.length}회`,75,936,18,'#6684a5');
+  if(d.depth.length<=80) d.depth.forEach((v,i)=>{ctx.beginPath();ctx.arc(x(i),y(v),4,0,Math.PI*2);ctx.fillStyle='#FF6B6B';ctx.fill();});
+  label(`압박 측정 횟수: ${d.depth.length}회`,75,936,18,'#A56A66');
   rounded(42,986,1116,307,20,'#ffffff');
-  label('맞춤형 피드백',72,1035,26,'#14254b','700');
+  label('맞춤형 피드백',72,1035,26,'#4B1714','700');
   const notes = [
     ['압박 깊이',good>=80?'대체로 적절합니다.':'압박 깊이 5~6 cm를 유지하세요.'],
     ['압박 속도',d.rate>=100&&d.rate<=120?'권장 속도 범위입니다.':'분당 100~120회를 유지하세요.'],
@@ -270,11 +270,11 @@ function exportReport() {
   ];
   notes.forEach(([name,note],i)=>{
     const yy=1083+i*40;
-    label('• '+name,76,yy,19,'#14254b','700');
-    label(note,288,yy,19,'#58748f');
+    label('• '+name,76,yy,19,'#4B1714','700');
+    label(note,288,yy,19,'#8F5B58');
   });
-  label('※ 압박 위치 및 이완의 80% 판정 기준은 시연용이며 임상 검증 기준이 아닙니다.',50,1331,16,'#7790a7');
-  label('XI:ON  ·  스마트 CPR 교육 결과',50,1360,17,'#7790a7');
+  label('※ 압박 위치 및 이완의 80% 판정 기준은 시연용이며 임상 검증 기준이 아닙니다.',50,1331,16,'#A77A77');
+  label('XI:ON  ·  스마트 CPR 교육 결과',50,1360,17,'#A77A77');
   const filename=`CPR_Training_${nickname.replace(/[^a-zA-Z0-9가-힣_-]/g,"_")}_${(recordInfo?.createdAt || new Date().toISOString()).slice(0,10)}.png`;
   canvas.toBlob(blob=>{
     if(!blob){report('PNG 생성에 실패했습니다.',true);return;}

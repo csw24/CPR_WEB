@@ -8,24 +8,24 @@ const select = document.getElementById('student');
 function drawChart(values) {
   const c = document.getElementById('chart');
   const ctx = c.getContext('2d');
-  const w = c.width, h = c.height, p = 48, min = 4, max = 6.5;
+  const w = c.width, h = c.height, p = 48, min = 0, max = 8;
   const y = v => h-p-(v-min)/(max-min)*(h-2*p);
   const x = i => p+i*(w-2*p)/Math.max(1,values.length-1);
   ctx.clearRect(0,0,w,h);
   ctx.fillStyle = '#FFE4EC';
   ctx.fillRect(p,y(6),w-2*p,y(5)-y(6));
-  ctx.strokeStyle = '#e1ebf3';
+  ctx.strokeStyle = '#FFE4EC';
   ctx.lineWidth = 1;
   ctx.font = '15px Arial';
-  ctx.fillStyle = '#6885a5';
-  for(let v=4;v<=6.5;v+=0.5) {
+  ctx.fillStyle = '#A56C68';
+  for(let v=0;v<=8;v+=1) {
     ctx.beginPath(); ctx.moveTo(p,y(v)); ctx.lineTo(w-p,y(v)); ctx.stroke();
     ctx.fillText(v.toFixed(1),8,y(v)+5);
   }
   if (!values.length) {
     ctx.textAlign = 'center';
     ctx.font = 'bold 22px "Noto Sans KR", Arial';
-    ctx.fillStyle = '#8ba0b4';
+    ctx.fillStyle = '#B48A87';
     ctx.fillText('교육 결과를 불러오면 그래프가 표시됩니다.', w / 2, h / 2);
     ctx.textAlign = 'left';
     return;
@@ -40,7 +40,7 @@ function drawChart(values) {
     ctx.fillStyle = '#FF4D4F'; ctx.fill();
     ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
   });
-  ctx.fillStyle = '#6885a5';
+  ctx.fillStyle = '#A56C68';
   values.forEach((_,i) => ctx.fillText(String(i+1),x(i)-4,h-14));
 }
 
@@ -80,12 +80,12 @@ function render() {
   const avg = d ? d.depth.reduce((a,b)=>a+b,0)/d.depth.length : null;
   const good = d ? d.depth.filter(v=>v>=5&&v<=6).length/d.depth.length*100 : null;
   const items = [
-    { label:'평균 압박 깊이', value:d ? avg.toFixed(2) : '-', unit:'cm', hint:'목표 5~6 cm', icon:'↕', accent:'#087d79', bubble:'#d9f5f0', tint:'#e7faf6' },
-    { label:'압박 속도', value:d ? d.rate : '-', unit:'회/분', hint:'목표 100~120 회/분', icon:'◴', accent:'#137bd1', bubble:'#e1efff', tint:'#eaf5ff' },
+    { label:'평균 압박 깊이', value:d ? avg.toFixed(2) : '-', unit:'cm', hint:'목표 5~6 cm', icon:'↕', accent:'#C7001E', bubble:'#FFE4EC', tint:'#FFF5F5' },
+    { label:'압박 속도', value:d ? d.rate : '-', unit:'회/분', hint:'목표 100~120 회/분', icon:'◴', accent:'#FF6B6B', bubble:'#FFE4EC', tint:'#FFF5F5' },
     { label:'압박 위치 정확도', value:d ? d.position : '-', unit:'%', hint:'압박 위치 평가', icon:'◎', accent:'#d53e68', bubble:'#ffe8ee', tint:'#fff0f3' },
-    { label:'깊이 기준 충족률', value:d ? good.toFixed(0) : '-', unit:'%', hint:'기준 내 압박 비율', icon:'▥', accent:'#5745b1', bubble:'#efebff', tint:'#f3f0ff' },
+    { label:'깊이 기준 충족률', value:d ? good.toFixed(0) : '-', unit:'%', hint:'기준 내 압박 비율', icon:'▥', accent:'#B14B45', bubble:'#efebff', tint:'#f3f0ff' },
     { label:'완전 이완 비율', value:d ? d.recoil : '-', unit:'%', hint:'압박 위치 평가', icon:'♧', accent:'#cc5a28', bubble:'#ffede4', tint:'#fff3e9' },
-    { label:'인공호흡 횟수', value:d ? d.breaths : '-', unit:'회', hint:'인공호흡 감지 횟수', icon:'♡', accent:'#137bd1', bubble:'#e1f2ff', tint:'#edf8ff' }
+    { label:'인공호흡 횟수', value:d ? d.breaths : '-', unit:'회', hint:'인공호흡 감지 횟수', icon:'♡', accent:'#FF6B6B', bubble:'#e1f2ff', tint:'#FFF5F5' }
   ];
   metrics.innerHTML = items.map(item => `
     <article class="metric" style="--accent:${item.accent};--bubble:${item.bubble};--tint:${item.tint}">
