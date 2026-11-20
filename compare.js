@@ -12,10 +12,9 @@ function quality(k,n){if(!valid(n))return NaN;if(k==='depth')return Math.abs(n-5
 function deltaText(k,a,b,d){if(!valid(a)||!valid(b))return '<span class="xion-muted">자료 없음</span>';const diff=b-a,sign=diff>0?'+':'';let cls='xion-muted';if(k==='pass'||k==='position'||k==='recoil')cls=diff>0?'xion-good':diff<0?'xion-bad':'xion-muted';if(k==='depth'||k==='rate'){const q1=quality(k,a),q2=quality(k,b);cls=q2<q1?'xion-good':q2>q1?'xion-bad':'xion-muted';}return `<span class="${cls}">${sign}${fmt(diff,d)} ${k==='depth'?'cm':k==='rate'?'회/분':k==='breaths'?'회':'%p'}</span>`;}
 function renderPair(){const a=state.shown.find(r=>r.id===$c('xionRoundA')?.value),b=state.shown.find(r=>r.id===$c('xionRoundB')?.value),target=$c('xionPairResult');if(!a||!b){target.textContent='비교할 기록을 선택해 주세요.';return;}if(a.id===b.id){target.textContent='서로 다른 두 회차를 선택해 주세요.';return;}const x=metrics(a),y=metrics(b);target.innerHTML=`<div style="overflow-x:auto"><table class="xion-delta-table"><thead><tr><th>평가 지표</th><th>선택 회차 A</th><th>선택 회차 B</th><th>변화량 (B−A)</th></tr></thead><tbody>${items.map(([k,label,unit,d])=>`<tr><th>${label}</th><td>${fmt(x[k],d)} ${unit}</td><td>${fmt(y[k],d)} ${unit}</td><td>${deltaText(k,x[k],y[k],d)}</td></tr>`).join('')}</tbody></table></div><p class="xion-compare-note">깊이는 5~6 cm 범위에 가까운 쪽, 속도는 100~120회/분 범위에 가까운 쪽을 긍정적인 변화로 표시합니다. 인공호흡 횟수는 단순 증가만으로 개선 여부를 판단하지 않습니다.</p>`;}
 function render(){
-  const user=window.XION?.user;
-  const all=state.records.filter(r=>user?.uid&&r.status==='claimed'&&r.recipientUid===user.uid&&(r.source==='ble'||r.source==='ble_raw')&&r.data&&typeof r.data==='object'&&!Array.isArray(r.data)).sort((a,b)=>String(a.createdAt||'').localeCompare(String(b.createdAt||'')));
+  const source=$c('xionCompareSource').value, user=window.XION?.user;
+  const all=state.records.filter(r=>user?.uid&&r.status==='claimed'&&r.recipientUid===user.uid&&(r.source==='ble'||r.source==='ble_raw')&&r.data&&Array.isArray(r.data.depth)).sort((a,b)=>String(a.createdAt||'').localeCompare(String(b.createdAt||'')));
   const rows=all.slice(-5); // 최근 5회만 비교, 5회 미만이면 전부
-  // 실제 BLE 기록은 depth 배열이 없어도 보관된 기록으로 인정합니다. 없는 지표는 —로 표시합니다.
   state.shown=rows;
   const body=$c('xionCompareBody'),count=all.length;
   $c('xionComparePNG').disabled=count<2;
@@ -55,8 +54,8 @@ async function exportComparisonPNG(){
   const nickname=window.XION?.profile?.nickname||'교육생';
   text(`${nickname}  |  ${new Date().toLocaleString('ko-KR')}  |  ${$c('xionCompareSource').selectedOptions[0].text}`,70,175,17,'#526f87');
   const m=records.map(metrics),avg=k=>{const v=m.map(x=>x[k]).filter(valid);return v.length?v.reduce((x,y)=>x+y,0)/v.length:NaN;};
-  const diff=m.length>1&&valid(m[m.length-1].pass)&&valid(m[0].pass)?m[m.length-1].pass-m[0].pass:NaN;
-  const cards=[['누적 교육 기록',`${state.records.filter(r=>r.status==='claimed'&&r.recipientUid===uid&&(r.source==='ble'||r.source==='ble_raw')&&r.data&&typeof r.data==='object'&&!Array.isArray(r.data)).length}회`],['평균 압박 깊이',`${fmt(avg('depth'),2)} cm`],['평균 깊이 충족률',`${fmt(avg('pass'),1)} %`],['최근 비교 구간 변화',`${valid(diff)?(diff>0?'+':'')+fmt(diff,1)+' %p':'—'}`]];
+  const diff=m.length>1?m[m.length-1].pass-m[0].pass:NaN;
+  const cards=[['누적 교육 기록',`${state.records.filter(r=>r.status==='claimed'&&r.recipientUid===uid&&(r.source==='ble'||r.source==='ble_raw')&&r.data&&Array.isArray(r.data.depth)).length}회`],['평균 압박 깊이',`${fmt(avg('depth'),2)} cm`],['평균 깊이 충족률',`${fmt(avg('pass'),1)} %`],['최근 비교 구간 변화',`${valid(diff)?(diff>0?'+':'')+fmt(diff,1)+' %p':'—'}`]];
   cards.forEach(([label,val],i)=>{const x=35+i*286;box(x,215,272,130);text(label,x+17,253,17,'#58748b','600');text(val,x+17,309,29,'#087e89','800');});
   // PNG도 화면과 동일하게 최근 최대 5회의 그래프 세 개를 가로 한 줄에 배치합니다.
   function trend(key,title,color,index){

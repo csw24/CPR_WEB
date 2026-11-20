@@ -109,7 +109,7 @@ function showSessionSummary(d){
   latestRawSession=d;window.xionRawSession=d;
   const host=$('xionRawSession');host.hidden=false;
   const participants=JSON.parse(sessionStorage.getItem('xionParticipants')||'{}');
-  $('xionRawSummary').textContent=`교육 ${d.session??'—'}회차 · 교대 ${d.switchCount??0}회 · 평균 교대시간 ${rawFmt(Number(d.avgSwitchGapMs)/1000,2)}초 · 아래 기존 6개 평가 카드에 실측 기반 시연 지표를 표시합니다 (의료 평가 아님).`;
+  $('xionRawSummary').textContent=`교육 ${d.session??'—'}회차 · 교대 ${d.switchCount??0}회 · 평균 교대시간 ${rawFmt(Number(d.avgSwitchGapMs)/1000,2)}초 · 아래 기존 6개 평가 카드에 실제 압박 이벤트 지표를 표시합니다 (의료 평가 아님).`;
   $('xionRawStudents').replaceChildren();
   const gaps=Array.isArray(d.switchGapsMs)?d.switchGapsMs:[];
   $('xionRawSwitches').textContent=gaps.length?'교대 소요: '+gaps.map((ms,i)=>`${i+1}회 ${rawFmt(Number(ms)/1000,2)}초`).join(' · '):'2분 교대 기록 없음';
@@ -170,7 +170,7 @@ function saveRawPNG(){
   box(55,996,1340,172);txt('교대 소요시간',80,1043,25,'#14254b','800');
   const gaps=Array.isArray(d.switchGapsMs)?d.switchGapsMs:[];
   txt(gaps.length?gaps.map((v,i)=>`${i+1}회: ${rawFmt(Number(v)/1000,2)}초`).join('    '):'완료된 교대 기록 없음',80,1096,21,'#147b83');
-  txt('※ FSR RAW와 ToF 거리(mm)는 보정된 CPR 압박 깊이(cm)·정확도·압박 횟수가 아닙니다.',65,1210,19,'#69849b');
+  txt('※ 압박 깊이는 ToF 기준값으로부터 계산된 센서 추정치이며, 의료적 판정 기준이 아닙니다.',65,1210,19,'#69849b');
   c.toBlob(blob=>{if(!blob)return;const u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download=`XION_RFID_원시기록_${new Date().toISOString().slice(0,10)}.png`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),30000);},'image/png');
 }
 $('xionRawPNG').addEventListener('click',saveRawPNG);
@@ -192,7 +192,7 @@ async function loadFromBLE(){
       $('xionRawMessage').textContent='이 세션의 저장 완료 기록: '+[...savedRawRoles].map(r=>r==='A'?'ST1':'ST2').join(', ');
       $('xionRawSaveBoth').disabled=!['A','B'].some(role=>(Number(d[role]?.fsrSamples)>0||Number(d[role]?.tofSamples)>0)&&!savedRawRoles.has(role));
     }
-    report('RFID별 누적값을 기존 평가 카드에 반영했습니다. 교육생 선택에서 ST1/ST2를 바꾸어 확인하세요. 표시된 %는 임시 시연 지표입니다.');
+    report('RFID별 실제 압박/호흡 이벤트를 평가 카드에 반영했습니다. 교육생 선택에서 ST1/ST2를 확인하세요.');
   }catch(e){report('교육 결과 수신 실패: '+e.message,true);}finally{clearTimeout(timer);pendingReceive=null;button.disabled=false;}
 }
 $('loadBle').addEventListener('click',loadFromBLE);

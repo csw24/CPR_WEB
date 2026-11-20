@@ -12,7 +12,7 @@ function drawChart(values) {
   const y = v => h-p-(v-min)/(max-min)*(h-2*p);
   const x = i => p+i*(w-2*p)/Math.max(1,values.length-1);
   ctx.clearRect(0,0,w,h);
-  ctx.fillStyle = '#dff7f1';
+  ctx.fillStyle = '#FFE4EC';
   ctx.fillRect(p,y(6),w-2*p,y(5)-y(6));
   ctx.strokeStyle = '#e1ebf3';
   ctx.lineWidth = 1;
@@ -30,14 +30,14 @@ function drawChart(values) {
     ctx.textAlign = 'left';
     return;
   }
-  ctx.strokeStyle = '#147bd0';
+  ctx.strokeStyle = '#FF4D4F';
   ctx.lineWidth = 3;
   ctx.beginPath();
   values.forEach((v,i) => i ? ctx.lineTo(x(i),y(v)) : ctx.moveTo(x(i),y(v)));
   ctx.stroke();
   values.forEach((v,i) => {
     ctx.beginPath(); ctx.arc(x(i),y(v),5,0,Math.PI*2);
-    ctx.fillStyle = '#147bd0'; ctx.fill();
+    ctx.fillStyle = '#FF4D4F'; ctx.fill();
     ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
   });
   ctx.fillStyle = '#6885a5';
@@ -46,25 +46,35 @@ function drawChart(values) {
 
 function render() {
   const d = students[select.value];
-  // BLE RAW display mode: explicitly labelled prototype indicators, not CPR accuracy.
+  // Measured BLE metrics; no fabricated percentages.
   if (d && d._rawPrototype) {
-    const raw=d._rawPrototype;
-    const n=Number(raw.fsrSamples)||0, m=Number(raw.tofSamples)||0;
-    const clamp=v=>Math.max(0,Math.min(100,Math.round(v)));
-    const f1=Number(raw.fsr1MeanRaw)||0, f2=Number(raw.fsr2MeanRaw)||0;
-    const range=m>0?Math.max(0,(Number(raw.tofMaxMm)||0)-(Number(raw.tofMinMm)||0)):0;
-    const values=[
-      ['압박 깊이 (시연 지표)',m?clamp(range/60*100):null,'%',`ToF 거리 변동폭 ${range.toFixed(0)} mm / 임시 60 mm 기준`],
-      ['압박 속도',null,'','압박 이벤트 검출 알고리즘 미구현'],
-      ['압박 위치 (시연 지표)',n?clamp((Math.min(f1,f2)/Math.max(1,Math.max(f1,f2)))*100):null,'%','FSR1·FSR2 평균 균형 기반 임시 지표'],
-      ['깊이 기준 (시연 지표)',m?clamp(range/60*100):null,'%','ToF 거리 변동폭 기반 임시 지표'],
-      ['완전 이완 (시연 지표)',m?clamp(100-Math.abs(range-40)/60*100):null,'%','ToF 변동폭 기반 임시 지표 (실제 이완율 아님)'],
-      ['인공호흡',null,'','SDP810 인공호흡 판정 미구현']
+    const r=d._rawPrototype;
+    const n=Number(r.compressionCount)||0;
+    const peaks=Array.isArray(r.depthPeaksMm)?r.depthPeaksMm.map(v=>Number(v)/10).filter(Number.isFinite):[];
+    const avg=n?Number(r.averageDepthMm)/10:null;
+    const good=n?Number(r.depthCompliancePct):null;
+    const recoil=n?Number(r.recoilPct):null;
+    const rate=Number(r.rateCpm)||null;
+    const breaths=Number(r.breathCount)||0;
+    const fmt=(v,d=1)=>v===null||!Number.isFinite(v)?'—':v.toFixed(d);
+    const rows=[
+      ['평균 압박 깊이',fmt(avg,2),'cm','5–6 cm 권장'],
+      ['압박 속도',fmt(rate,1),'회/분','압박 간격 기준, 호흡 시간 제외'],
+      ['압박 위치 정확도','—','','위치 센서 평가 미구현'],
+      ['깊이 기준 충족률',fmt(good,1),'%','50–60 mm / 유효 압박 횟수'],
+      ['완전 이완 비율',fmt(recoil,1),'%','10 mm 이하 이완 후 재압박'],
+      ['인공호흡 횟수',String(breaths),'회','차압센서 감지 횟수']
     ];
-    const palette=['#087d79','#137bd1','#d53e68','#5745b1','#cc5a28','#137bd1'];
-    metrics.innerHTML=values.map(([label,v,unit,hint],i)=>`<article class="metric" style="--accent:${palette[i]};--bubble:#e4f7f3;--tint:#f1faf8"><div class="metric-icon">${['↕','◴','◎','▥','♧','♡'][i]}</div><span>${label}</span><strong>${v===null?'—':v} <small>${unit}</small></strong><em>${hint}</em></article>`).join('');
-    feedback.innerHTML='<div class="empty-feedback"><strong>실측 기반 임시 시연 지표</strong><p>RFID별 실제 센서값으로 계산한 테스트용 백분율입니다. 의료적으로 검증된 CPR 정확도·깊이·이완율이 아닙니다. 압박 속도와 인공호흡은 아직 산출할 수 없습니다.</p></div>';
-    drawChart([]);
+    metrics.innerHTML=rows.map(([label,v,unit,hint],i)=>`<article class="metric" style="--accent:#FF4D4F;--bubble:#FFE4EC;--tint:#FFF5F5"><div class="metric-icon">${['↕','◴','◎','▥','♧','♡'][i]}</div><span>${label}</span><strong>${v} <small>${unit}</small></strong><em>${hint}</em></article>`).join('');
+    const notes=[
+      ['압박 깊이',avg===null?'압박 기록이 없습니다.':avg<5?'압박 깊이가 부족합니다. 더 깊게 누르세요.':avg<=6?'평균 압박 깊이가 적절합니다.':'압박이 너무 깊습니다. 조금 덜 누르세요.'],
+      ['압박 속도',rate===null?'연속 압박 간격이 부족해 계산할 수 없습니다.':rate<100?'속도를 높이세요.':rate<=120?'압박 속도가 적절합니다.':'압박 속도를 늦추세요.'],
+      ['압박 위치','압박 위치 정확도는 아직 측정하지 않습니다.'],
+      ['완전 이완',recoil===null?'압박 기록이 없습니다.':`이완 충족률 ${fmt(recoil,1)}% — 매 압박 후 10 mm 이하로 이완하세요.`],
+      ['인공호흡',`${breaths}회 감지되었습니다. 30:2 사이클마다 2회 실시하세요.`]
+    ];
+    feedback.innerHTML=notes.map(([k,v])=>`<div class="feedback-row"><strong>${k}</strong><span class="feedback-text">${v}</span></div>`).join('');
+    drawChart(peaks);
     return;
   }
   const avg = d ? d.depth.reduce((a,b)=>a+b,0)/d.depth.length : null;
