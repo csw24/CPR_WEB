@@ -161,3 +161,74 @@ main { width:100%; max-width:1800px; }
 .xion-personal .record-list{display:flex;flex-wrap:wrap;gap:10px}
 .xion-criteria-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.xion-criteria-card{padding:24px;border:1px solid #FFD0D8;border-radius:20px;background:white}.xion-criteria-card strong{font-size:25px;color:#FF4D4F}.xion-criteria-card p{line-height:1.8;color:#765251}.xion-criteria-card small{color:#a16d6b}
 @media(max-width:750px){.xion-criteria-grid{grid-template-columns:1fr}}
+
+/* XI:ON: common logo; layout of other pages is unchanged */
+.xion-brand-logo{width:106px;height:106px;object-fit:contain;border-radius:25px;flex:none;box-shadow:0 13px 22px #ff4d4f24}
+@media(max-width:650px){.xion-brand-logo{width:72px;height:72px;border-radius:17px}}
+/* CPR criteria page only */
+.xion-criteria-page .hero{min-height:145px}
+.xion-criteria-page .hero-copy{gap:20px}
+.xion-guide-intro{margin:25px 0 20px;padding:4px 0 4px 20px;border-left:6px solid #ff4d4f}
+.xion-guide-intro h2{margin:6px 0 0;font-size:clamp(22px,3vw,34px);color:#631b22;line-height:1.4}
+.xion-guide-kicker{font-size:12px;font-weight:800;letter-spacing:2px;color:#ed3e52}
+.xion-guide-panel{position:relative;padding:28px 24px;margin-bottom:24px;border:1px solid #ffcad3;border-radius:25px;background:linear-gradient(145deg,#fff 0%,#fff0f3 100%);box-shadow:0 12px 32px #c23d4810}
+.xion-guide-label{display:inline-block;margin:-8px 0 20px;padding:10px 20px;border-radius:13px;background:linear-gradient(110deg,#ff626e,#bd1f36);color:#fff;font-size:19px;letter-spacing:0}
+.xion-guide-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.xion-guide-card{min-width:0;padding:24px 15px;text-align:center;background:#fff;border:1px solid #ffe0e5;border-radius:20px;box-shadow:0 5px 18px #c4384810}
+.xion-guide-symbol{display:grid;place-items:center;width:60px;height:60px;margin:0 auto 14px;border-radius:50%;background:#ffe9ed;color:#df2944;font-size:26px;font-weight:800}
+.xion-guide-card h4{margin:0 0 8px;color:#531d25;font-size:17px}
+.xion-guide-card strong{display:block;color:#ed4253;font-size:clamp(20px,2.6vw,30px);line-height:1.3}
+.xion-guide-card p{margin:12px auto 0;max-width:280px;font-size:13px;line-height:1.65;color:#89545a}
+.xion-guide-note{margin:0 0 16px;font-size:14px;line-height:1.7;color:#945a62}
+.xion-guide-table-wrap{overflow-x:auto;border:1px solid #ffd6dc;border-radius:15px;background:#fff}
+.xion-guide-table{width:100%;border-collapse:collapse;font-size:14px;color:#58262d;min-width:690px}
+.xion-guide-table thead{background:#ffe2e7;color:#7b2634}
+.xion-guide-table th,.xion-guide-table td{padding:17px 18px;border-bottom:1px solid #ffe5e9;text-align:left;vertical-align:middle;line-height:1.6}
+.xion-guide-table tbody th{white-space:nowrap;font-weight:800;color:#8b2435}
+.xion-guide-table tbody tr:last-child th,.xion-guide-table tbody tr:last-child td{border-bottom:0}
+.xion-guide-measure .xion-guide-note:last-child{margin:15px 0 0}
+@media(min-width:1050px){.xion-guide-grid{grid-template-columns:repeat(6,minmax(0,1fr))}}
+@media(max-width:650px){.xion-guide-panel{padding:20px 14px}.xion-guide-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.xion-guide-card{padding:17px 10px}.xion-guide-card p{font-size:12px}.xion-guide-label{font-size:16px}}
+
+/* XI:ON visual refresh 2026-11-22 — presentation only.
+   Existing HTML IDs, element order, hidden states, event handlers and JS remain untouched. */
+:root{--xion-ink:#5b1723;--xion-hot:#f04457;--xion-soft:#fff0f3;--xion-stroke:#ffd7df}
+body{background:radial-gradient(ellipse at 85% 0%,#ffe5eb 0%,transparent 40%),linear-gradient(165deg,#fff 0%,#fff8f9 46%,#ffeef2 100%);color:var(--xion-ink)}
+main{max-width:1680px;padding:30px clamp(16px,3.2vw,54px) 34px}
+.hero{min-height:192px;padding:30px clamp(20px,3vw,44px);border-radius:26px;background:linear-gradient(115deg,#fff 4%,#fff7f9 53%,#ffe1e8 100%);border:1px solid #ffced8;box-shadow:0 15px 35px #9f233014}
+.hero h1{color:#5a0f1e;letter-spacing:-1.2px}
+.hero-copy small{color:#e72d4d}
+.xion-brand-logo{box-shadow:0 10px 25px #e53b5328}
+.data-actions,.history-tools,.xion-compare-page,.xion-raw-panel{border:1px solid #ffdae1;border-radius:22px;background:linear-gradient(145deg,#fff 50%,#fff7f8 100%);box-shadow:0 12px 30px #9f233010}
+.data-actions{padding:22px 26px;margin-top:-8px}
+.action-buttons{gap:12px}
+.action-btn,.xion-view-tab,.xion-page-nav a{border-radius:12px;min-height:43px;transition:background-color .18s,box-shadow .18s,transform .18s}
+.action-btn:focus-visible,.xion-view-tab:focus-visible,.record-item:focus-visible,.xion-page-nav a:focus-visible{outline:3px solid #ff8193;outline-offset:2px}
+.action-btn.primary,.xion-view-tab.active{background:linear-gradient(110deg,#ff596b,#db2848);border-color:#ef4058;color:#fff;box-shadow:0 5px 14px #e9435620}
+.action-btn.secondary{background:#fff3f5;border:1px solid #ffcbd4;color:#9e263d}
+.xion-view-nav{margin-top:22px;margin-bottom:24px;gap:10px;flex-wrap:wrap}
+.xion-view-tab{padding:12px 21px}
+.cards{grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-top:18px}
+.metric{padding:25px 26px;border-radius:22px;border:1px solid #ffe2e8;background:linear-gradient(140deg,#fff 48%,#fff1f4 100%);box-shadow:0 10px 24px #ae324013}
+.metric-icon{width:57px;height:57px;background:#ffe5eb;color:#e73752}
+.metric strong{color:#ed4257}
+.details-grid{grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:18px;margin-top:20px}
+.details-grid>.panel{border:1px solid #ffe0e6;border-radius:24px;background:#fff;box-shadow:0 10px 26px #9f23300f;padding:25px}
+.panel-heading h2,.feedback-panel h2{color:#651725}
+.feedback-row{border:1px solid #ffe0e6;border-radius:14px;background:#fffafb;padding:15px}
+.history-tools{padding:24px}
+.record-list{gap:12px}
+.record-item{border:1px solid #ffcdd6;background:#fff9fa;border-radius:14px;padding:14px 16px}
+.record-item.active{background:#ffe9ee;border-color:#ed4860}
+.xion-record-wrap .record-item{padding-right:50px}
+.xion-delete-record{z-index:1}
+.xion-compare-heading{gap:20px}
+.xion-compare-panel{border-radius:18px}
+.xion-trend-grid{gap:16px}
+.xion-trend-grid .xion-compare-panel{padding:19px 16px}
+.xion-page-nav{gap:10px;margin-bottom:20px}
+.xion-page-nav a{background:#fff;border-color:#ffd3dc;padding:11px 17px}
+footer{border-top:1px solid #ffe0e6;margin-top:30px;padding-top:22px}
+@media(max-width:1100px){.details-grid{grid-template-columns:1fr}.cards{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:720px){main{padding:14px}.hero{padding:22px;border-radius:21px}.cards{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.metric{padding:17px 14px}.details-grid>.panel{padding:18px 13px}.data-actions,.history-tools{padding:16px}.xion-trend-grid{grid-template-columns:1fr}}
+@media(max-width:380px){.cards{grid-template-columns:1fr}}

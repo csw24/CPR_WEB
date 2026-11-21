@@ -1,0 +1,31 @@
+XI:ON 웹사이트 업데이트 (2026-11-22)
+
+원본: 사용자가 제공한 CPR_WEB(1).zip
+
+1. GitHub CPR_WEB 저장소에 이 폴더의 HTML, JS, CSS, PNG, GIF 파일을 업로드하세요.
+   index.html, dashboard.html, my-records.html, criteria.html, style.css,
+   script.js, integration.js, history.js, compare.js, personal.js, firebase.js,
+   participants.js, songi_web.gif, xion_red_logo.png
+   기존 파일은 같은 이름으로 교체하고, 새 파일은 추가합니다.
+
+2. firestore.rules는 GitHub에 올리는 것만으로 Firebase 보안 규칙이 적용되지 않습니다.
+   Firebase Console -> Firestore Database -> 규칙에 firestore.rules의 전체 내용을
+   붙여넣고 '게시'를 눌러야 기록 삭제 기능이 작동합니다.
+
+3. Arduino 파일은 수정하지 않았습니다. 기존 ESP32 펌웨어를 그대로 사용하세요.
+
+4. 기능
+ - 로그인 후 메인 메뉴: 클래스 입장 / 내 기록 관리 / CPR 평가지표 / 로그아웃
+ - 클래스 입장 및 기존 BLE/RFID/Firebase 저장 기능 유지
+ - 내 기록 관리: ST2 입력 없이 본인 기록 조회, 별명 변경, PNG 저장,
+   개별 삭제(휴지통), 전체 삭제(추가 확인), 회차별 비교
+ - 회차 번호는 각 날짜별로 1부터 다시 시작
+ - 그래프 X축은 기록된 모든 압박 데이터에 맞춰 자동 확장, 눈금은 간격 조절
+ - 깊이 표기 cm 통일, 인공호흡 카드의 차압센서 감지 문구 제거
+ - 회차 비교는 기록 2개 이상일 때, 최근 최대 5개를 표시
+
+5. 참고
+ - Firestore 실제 데이터 및 실제 BLE 하드웨어 연동은 이 환경에서 테스트하지 못했습니다.
+ - 삭제 기능을 처음 테스트할 때는 보존할 필요 없는 기록으로 확인하세요.
+ - 삭제한 기록은 복구할 수 없습니다.
+ - GitHub Pages 배포 후 Ctrl+Shift+R로 새로고침하세요.
