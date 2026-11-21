@@ -41,7 +41,11 @@ function drawChart(values) {
     ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
   });
   ctx.fillStyle = '#A56C68';
-  values.forEach((_,i) => ctx.fillText(String(i+1),x(i)-4,h-14));
+  const maxLabels=Math.max(2,Math.floor((w-2*p)/44));
+  const tickStep=Math.max(1,Math.ceil(values.length/maxLabels));
+  ctx.textAlign='center';
+  values.forEach((_,i) => {if(i===0||i===values.length-1||(i+1)%tickStep===0)ctx.fillText(String(i+1),x(i),h-14);});
+  ctx.textAlign='left';
 }
 
 function render() {
@@ -61,16 +65,16 @@ function render() {
       ['평균 압박 깊이',fmt(avg,2),'cm','5–6 cm 권장'],
       ['압박 속도',fmt(rate,1),'회/분','압박 간격 기준, 호흡 시간 제외'],
       ['압박 위치 정확도','—','','위치 센서 평가 미구현'],
-      ['깊이 기준 충족률',fmt(good,1),'%','50–60 mm / 유효 압박 횟수'],
-      ['완전 이완 비율',fmt(recoil,1),'%','10 mm 이하 이완 후 재압박'],
-      ['인공호흡 횟수',String(breaths),'회','차압센서 감지 횟수']
+      ['깊이 기준 충족률',fmt(good,1),'%','5~6 cm / 유효 압박 횟수'],
+      ['완전 이완 비율',fmt(recoil,1),'%','1 cm 이하 이완 후 재압박'],
+      ['인공호흡 횟수',String(breaths),'회','']
     ];
     metrics.innerHTML=rows.map(([label,v,unit,hint],i)=>`<article class="metric" style="--accent:#FF4D4F;--bubble:#FFE4EC;--tint:#FFF5F5"><div class="metric-icon">${['↕','◴','◎','▥','♧','♡'][i]}</div><span>${label}</span><strong>${v} <small>${unit}</small></strong><em>${hint}</em></article>`).join('');
     const notes=[
       ['압박 깊이',avg===null?'압박 기록이 없습니다.':avg<5?'압박 깊이가 부족합니다. 더 깊게 누르세요.':avg<=6?'평균 압박 깊이가 적절합니다.':'압박이 너무 깊습니다. 조금 덜 누르세요.'],
       ['압박 속도',rate===null?'연속 압박 간격이 부족해 계산할 수 없습니다.':rate<100?'속도를 높이세요.':rate<=120?'압박 속도가 적절합니다.':'압박 속도를 늦추세요.'],
       ['압박 위치','압박 위치 정확도는 아직 측정하지 않습니다.'],
-      ['완전 이완',recoil===null?'압박 기록이 없습니다.':`이완 충족률 ${fmt(recoil,1)}% — 매 압박 후 10 mm 이하로 이완하세요.`],
+      ['완전 이완',recoil===null?'압박 기록이 없습니다.':`이완 충족률 ${fmt(recoil,1)}% — 매 압박 후 1 cm 이하로 이완하세요.`],
       ['인공호흡',`${breaths}회 감지되었습니다. 30:2 사이클마다 2회 실시하세요.`]
     ];
     feedback.innerHTML=notes.map(([k,v])=>`<div class="feedback-row"><strong>${k}</strong><span class="feedback-text">${v}</span></div>`).join('');
@@ -153,7 +157,7 @@ window.clearCPRResult = function(role) {
 // Only show the scanned student's raw BLE data in the existing metric cards.
 window.applyRawStudentPreview=function(role,stats){
   if(!['A','B'].includes(role))return;
-  if(!stats||!(Number(stats.fsrSamples)>0||Number(stats.tofSamples)>0)){
+  if(!stats||!(Number(stats.fsrSamples)>0||Number(stats.tofSamples)>0||Number(stats.compressionCount)>0)){
     students[role]=null;
   }else{
     students[role]={_rawPrototype:stats};

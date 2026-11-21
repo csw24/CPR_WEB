@@ -102,7 +102,7 @@ const rawFmt=(v,d=1)=>v===null||v===undefined||v===''||!Number.isFinite(Number(v
 const rawEsc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function rawRows(stats){
   if(!stats)return '<p>해당 교육생의 데이터가 없습니다.</p>';
-  const rows=[['RFID UID',stats.uid||'—'],['FSR 측정 샘플',stats.fsrSamples??0],['FSR1 평균',rawFmt(stats.fsr1MeanRaw,1)+' RAW'],['FSR2 평균',rawFmt(stats.fsr2MeanRaw,1)+' RAW'],['FSR1 최대',rawFmt(stats.fsr1PeakRaw,0)+' RAW'],['FSR2 최대',rawFmt(stats.fsr2PeakRaw,0)+' RAW'],['ToF 측정 샘플',stats.tofSamples??0],['ToF 평균 거리',rawFmt(stats.tofMeanMm,1)+' mm'],['ToF 최소 거리',stats.tofSamples?rawFmt(stats.tofMinMm,0)+' mm':'—'],['ToF 최대 거리',stats.tofSamples?rawFmt(stats.tofMaxMm,0)+' mm':'—']];
+  const rows=[['RFID UID',stats.uid||'—'],['FSR 측정 샘플',stats.fsrSamples??0],['FSR1 평균',rawFmt(stats.fsr1MeanRaw,1)+' RAW'],['FSR2 평균',rawFmt(stats.fsr2MeanRaw,1)+' RAW'],['FSR1 최대',rawFmt(stats.fsr1PeakRaw,0)+' RAW'],['FSR2 최대',rawFmt(stats.fsr2PeakRaw,0)+' RAW'],['ToF 측정 샘플',stats.tofSamples??0],['ToF 평균 거리',rawFmt(Number(stats.tofMeanMm)/10,2)+' cm'],['ToF 최소 거리',stats.tofSamples?rawFmt(Number(stats.tofMinMm)/10,2)+' cm':'—'],['ToF 최대 거리',stats.tofSamples?rawFmt(Number(stats.tofMaxMm)/10,2)+' cm':'—']];
   return '<table class="xion-raw-table">'+rows.map(([k,v])=>`<tr><th>${rawEsc(k)}</th><td>${rawEsc(v)}</td></tr>`).join('')+'</table>';
 }
 function showSessionSummary(d){
@@ -165,7 +165,7 @@ function saveRawPNG(){
   txt(`교육 ${d.session??'—'}회차   |   ${new Date().toLocaleString('ko-KR')}`,65,188,21,'#A56C68');
   txt(`완료 교대 ${d.switchCount??0}회   ·   평균 교대시간 ${rawFmt(Number(d.avgSwitchGapMs)/1000,2)}초`,65,247,25,'#861A13','700');
   ['A','B'].forEach((role,i)=>{const x=55+i*690,y=290,st=d[role]||{};box(x,y,660,680);txt(`${role==='A'?'ST1':'ST2'} · ${names[role]||role}`,x+25,y+54,29,'#4B1714','800');
-    const vals=[['RFID UID',st.uid||'—'],['FSR 샘플',st.fsrSamples??0],['FSR1 평균 RAW',rawFmt(st.fsr1MeanRaw,1)],['FSR2 평균 RAW',rawFmt(st.fsr2MeanRaw,1)],['FSR1 최대 RAW',rawFmt(st.fsr1PeakRaw,0)],['FSR2 최대 RAW',rawFmt(st.fsr2PeakRaw,0)],['ToF 샘플',st.tofSamples??0],['ToF 평균 mm',rawFmt(st.tofMeanMm,1)],['ToF 최소 mm',st.tofSamples?rawFmt(st.tofMinMm,0):'—'],['ToF 최대 mm',st.tofSamples?rawFmt(st.tofMaxMm,0):'—']];
+    const vals=[['RFID UID',st.uid||'—'],['FSR 샘플',st.fsrSamples??0],['FSR1 평균 RAW',rawFmt(st.fsr1MeanRaw,1)],['FSR2 평균 RAW',rawFmt(st.fsr2MeanRaw,1)],['FSR1 최대 RAW',rawFmt(st.fsr1PeakRaw,0)],['FSR2 최대 RAW',rawFmt(st.fsr2PeakRaw,0)],['ToF 샘플',st.tofSamples??0],['ToF 평균 cm',rawFmt(Number(st.tofMeanMm)/10,2)],['ToF 최소 cm',st.tofSamples?rawFmt(Number(st.tofMinMm)/10,2):'—'],['ToF 최대 cm',st.tofSamples?rawFmt(Number(st.tofMaxMm)/10,2):'—']];
     vals.forEach(([label,val],j)=>{txt(label,x+26,y+112+j*53,20,'#A56A66','600');txt(val,x+350,y+112+j*53,21,'#4B1714','700');});});
   box(55,996,1340,172);txt('교대 소요시간',80,1043,25,'#4B1714','800');
   const gaps=Array.isArray(d.switchGapsMs)?d.switchGapsMs:[];

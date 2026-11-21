@@ -22,6 +22,7 @@
     .help { text-align:center; margin:16px 0 0; font-size:12px; line-height:1.7; color:#A56A66; }
     .error { color:#b54735; min-height:20px; font-size:13px; margin-top:12px; text-align:center; }
     @media(max-width:500px){ .card {padding:30px 22px;} }
+  .xion-main-menu{display:grid;grid-template-columns:1fr 1fr;gap:12px}.xion-main-menu[hidden]{display:none!important}.xion-main-menu button{margin:0;min-height:75px}.xion-main-menu button:last-child{background:#9b6866}@media(max-width:440px){.xion-main-menu{grid-template-columns:1fr}}
   </style>
 </head>
 <body>
@@ -30,12 +31,17 @@
     <p class="subtitle">CPR Training Analytics</p>
     <div id="authArea"><button type="button" id="googleLogin">Google 계정으로 로그인</button></div>
     <form id="nicknameForm" hidden><label for="myNickname">최초 닉네임 등록</label><input id="myNickname" maxlength="20" placeholder="예: 스파이더맨" required><button type="submit">닉네임 등록하기</button></form>
+    <nav id="mainMenu" class="xion-main-menu" hidden aria-label="메인 메뉴">
+      <button type="button" id="openClass">클래스 입장</button>
+      <button type="button" id="openMyRecords">내 기록 관리</button>
+      <button type="button" id="openCriteria">CPR 평가지표</button>
+      <button type="button" id="logout">로그아웃</button>
+    </nav>
     <form id="entryForm" hidden>
       <label>ST1 교육생 (로그인 계정)</label><input id="st1" readonly>
       <label for="st2">ST2 교육생 닉네임</label><input id="st2" placeholder="예: 아이언맨" maxlength="20" required>
       <button type="submit">클래스 입장하기</button>
-      <button type="button" id="editNickname" style="margin-top:10px;background:#A92219">내 닉네임 수정</button>
-      <button type="button" id="logout" style="margin-top:10px;background:#A56A66">로그아웃</button>
+      <button type="button" id="backMenu" style="background:#A56A66">메인 메뉴로</button>
     </form>
     <p class="error" id="error" role="alert"></p>
     <section id="pendingArea" hidden style="margin-top:22px;border-top:1px solid #dceaf1;padding-top:18px"><strong>내 기록 수령 대기</strong><div id="pendingList" style="margin-top:10px"></div></section>
@@ -44,13 +50,16 @@
   <script type="module">
     const $=id=>document.getElementById(id),error=$('error');
     const showError=e=>{error.textContent=e?.message||String(e)};
-    async function refresh(){await window.XION.ready;const x=window.XION;$('authArea').hidden=!!x.user;$('nicknameForm').hidden=!x.user||!!x.profile;$('entryForm').hidden=!x.user||!x.profile;if(x.profile){$('st1').value=x.profile.nickname;await showPending();}}
+    async function refresh(){await window.XION.ready;const x=window.XION;$('authArea').hidden=!!x.user;$('nicknameForm').hidden=!x.user||!!x.profile;$('mainMenu').hidden=!x.user||!x.profile;$('entryForm').hidden=true;if(x.profile){$('st1').value=x.profile.nickname;await showPending();}}
     window.addEventListener('xionauthchanged',refresh);window.addEventListener('load',refresh);
     async function showPending(){const area=$('pendingArea'),list=$('pendingList');try{const all=await window.XION.myRecords(),pending=all.filter(r=>r.status==='pending');area.hidden=!pending.length;list.replaceChildren();for(const r of pending){const box=document.createElement('div');box.style='padding:12px 0;border-bottom:1px solid #e2ebf1';const t=document.createElement('div');t.textContent=`${r.nickname} · ${new Date(r.createdAt).toLocaleString('ko-KR')} · ST2 · ${r.source==='ble_raw'?'RFID 원시 측정':'BLE 결과'}`;const yes=document.createElement('button'),no=document.createElement('button');yes.textContent='내 기록으로 가져오기';no.textContent='거절하기';yes.style='margin-top:10px';no.style='margin-top:7px;background:#A56A66';for(const [b,choice] of [[yes,'claimed'],[no,'rejected']])b.onclick=async()=>{yes.disabled=no.disabled=true;try{await window.XION.decide(r.id,choice);await showPending();}catch(e){showError(e);yes.disabled=no.disabled=false;}};box.append(t,yes,no);list.append(box);}}catch(e){showError(e);}}
     $('googleLogin').onclick=async()=>{try{error.textContent='';await window.XION.login();await refresh();}catch(e){showError(e)}};
     $('nicknameForm').onsubmit=async e=>{e.preventDefault();try{error.textContent='';await window.XION.register($('myNickname').value);await refresh();}catch(err){showError(err)}};
-    $('editNickname').onclick=async()=>{const old=window.XION.profile?.nickname||'';const next=prompt('새 닉네임을 입력해 주세요 (2~20자)',old);if(next===null)return;try{error.textContent='';await window.XION.changeNickname(next);await refresh();alert('닉네임이 변경되었습니다.');}catch(err){showError(err)}};
     $('logout').onclick=()=>window.XION.logout();
+    $('openClass').onclick=()=>{$('mainMenu').hidden=true;$('entryForm').hidden=false;};
+    $('backMenu').onclick=()=>{$('entryForm').hidden=true;$('mainMenu').hidden=false;};
+    $('openMyRecords').onclick=()=>location.assign('my-records.html');
+    $('openCriteria').onclick=()=>location.assign('criteria.html');
     $('entryForm').onsubmit=async e=>{e.preventDefault();try{error.textContent='';const x=window.XION,A=x.profile.nickname,B=$('st2').value.trim();const person=await x.findNickname(B);if(!person)throw Error('존재하지 않는 닉네임입니다. ST2가 먼저 Google 로그인으로 닉네임을 등록해야 합니다.');if(person.uid===x.user.uid)throw Error('ST1과 ST2는 서로 다른 교육생이어야 합니다.');sessionStorage.setItem('xionParticipants',JSON.stringify({A,B:person.nickname,Buid:person.uid,ownerUid:x.user.uid}));location.assign('dashboard.html');}catch(err){showError(err)}};
   </script>
 </body>
