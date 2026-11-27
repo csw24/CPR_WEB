@@ -264,3 +264,16 @@ footer{border-top:1px solid #ffe0e6;margin-top:30px;padding-top:22px}
 @media(max-width:420px) {
   #xionComparePage .xion-stat-grid { grid-template-columns:1fr; }
 }
+
+/* AHA desktop: keep only the two long values on one line. */
+@media (min-width: 1050px) {
+  .xion-guide-grid > .xion-guide-card:nth-child(2),
+  .xion-guide-grid > .xion-guide-card:nth-child(6) {
+    container-type: inline-size;
+  }
+  .xion-guide-grid > .xion-guide-card:nth-child(2) > strong,
+  .xion-guide-grid > .xion-guide-card:nth-child(6) > strong {
+    white-space: nowrap;
+    font-size: min(30px, 12.5cqi);
+  }
+}
