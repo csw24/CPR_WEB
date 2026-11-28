@@ -184,6 +184,7 @@ async function loadFromBLE(){
     const received=new Promise((resolve,reject)=>{pendingReceive={resolve,reject};timer=setTimeout(()=>{if(pendingReceive){pendingReceive=null;reject(Error('30초 내에 결과가 도착하지 않았습니다. 택트 스위치로 교육을 종료했는지 확인하세요.'));}},30000);});
     try{await requestCharacteristic.writeValueWithResponse(new TextEncoder().encode('GET'));}catch(e){if(pendingReceive){pendingReceive.reject(e);pendingReceive=null;}}
     const d=await received;
+    console.info("[XI:ON BLE] received session", JSON.stringify(d));
     if(d.version!==1||!('fsrSamples' in d)||!('tofSamples' in d))throw Error('ESP32 교육 결과 형식이 일치하지 않습니다.');
     const fingerprint=JSON.stringify([d.session,d.durationMs,d.A,d.B,d.switchGapsMs]);
     if(fingerprint!==savedRawSession){savedRawSession=fingerprint;savedRawRoles=new Set();}
