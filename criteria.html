@@ -19,7 +19,7 @@
 <tr><th>압박 속도</th><td>유효 압박 사이의 시간 간격으로 분당 횟수 계산</td><td>인공호흡 구간은 간격 계산에서 제외 · 회/분</td></tr>
 <tr><th>완전 이완 비율</th><td>(압박 후 1 cm 미만까지 복귀한 횟수 ÷ 유효 압박 횟수) × 100</td><td>XI:ON의 자체 이완 판정 문턱값 적용(%)</td></tr>
 <tr><th>인공호흡 횟수</th><td>SDP810 차압센서의 인공호흡 감지 이벤트 누적</td><td>교육 중 감지한 인공호흡 횟수(회)</td></tr>
-<tr><th>압박 위치</th><td>정량 평가 미구현</td><td>현재 정확도 수치 미제공</td></tr>
+<tr><th>압박 위치 정확도</th><td>(정상 위치 압박 횟수 ÷ 유효 압박 횟수) × 100</td><td>9채널 FSR의 Baseline 보정 Peak 기반 가중 중심 D ≤ 0.5 및 중앙 출력 비율 ≥ 10% · XI:ON 자체 기준(%)</td></tr>
 </tbody></table></div><p class="xion-guide-note">* 유효 압박: ToF로 측정한 최대 깊이가 3 cm 이상인 압박. 센서 데이터는 mm로 수신하되 웹 화면에서는 cm로 환산합니다.</p></section>
 <footer>XI:ON · CPR Training Analytics</footer>
 </main><script type="module" src="firebase.js"></script><script type="module">await window.XION.ready;if(!window.XION.user||!window.XION.profile)location.replace('index.html');if(sessionStorage.getItem('xionParticipants'))document.getElementById('classBack').hidden=false;</script></body></html>

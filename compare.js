@@ -14,7 +14,7 @@ function metrics(r){
   return {depth:Number.isFinite(val(raw.averageDepthMm))?val(raw.averageDepthMm)/10:avg,
     pass:Number.isFinite(val(raw.depthCompliancePct))?val(raw.depthCompliancePct):(depths.length?100*depths.filter(v=>v>=5&&v<=6).length/depths.length:NaN),
     rate:Number.isFinite(val(raw.rateCpm))?val(raw.rateCpm):val(d.rate),
-    position:val(d.position),
+    position:val(raw.positionAccuracyPct ?? d.position),
     recoil:Number.isFinite(val(raw.recoilPct))?val(raw.recoilPct):val(d.recoil),
     breaths:Number.isFinite(val(raw.breathCount))?val(raw.breathCount):val(d.breaths),
     count:Number.isFinite(n)?n:depths.length};
